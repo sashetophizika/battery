@@ -1,8 +1,42 @@
 #!/bin/bash
 
+colors=false 
+live=false 
+minimal=true
+
+while getopts "hclm" option; do
+      case $option in
+    c)
+        colors=true
+        ;;
+    l)
+        live=true
+        ;;
+    m)
+        minimal=true
+        ;;
+    h)
+        echo "Usage:" 
+        echo "  battery [-cl]"
+        echo " "
+        echo "OPTIONS"
+        echo "  -c   Add colors"
+        echo "  -l   Monitor the battery live"
+        exit 0
+        ;;
+    *)
+        echo "Usage: battery [-cl]" 
+        exit 1
+    esac
+done
+
 function cleanup() {
     tput reset
 }
+
+if [[ $live == true ]] && [[ $minimal == false ]]; then
+    trap cleanup EXIT
+fi
 
 megaintdent () {
 i=0
@@ -56,10 +90,16 @@ bat=$(upower -i /org/freedesktop/UPower/devices/DisplayDevice | grep -E '[[:digi
 upower -i /org/freedesktop/UPower/devices/DisplayDevice | grep 'discharging' > /dev/null
 charging=$?
 
+if [[ $minimal == true ]]; then
+    echo "Battery: $bat%"
+    echo "Charging: $charging"
+    exit 0
+fi
+
 previous_bat=0
 previous_charge=0
 
-while [ 1 ]
+while [ 0 ]
 do
     if [ $(echo "$time % 10" | bc) -eq 0 ]; then
         if [[ "$previous_charge" == "$charging" ]] && [[ "$previous_bat" == "$bat" ]]; then
@@ -84,7 +124,7 @@ do
 
         let cols=$(tput cols) newl=cols/2-25
 
-        if [ "$1" = "-c" ]; then 
+        if [[ $colors == true ]]; then 
             battery_color='\e[38;2;166;227;161m'
             charge_color='\e[38;2;116;199;236m'
         
@@ -150,8 +190,11 @@ do
         charging=$?
     fi 
 
+    if [[ $live == false ]]; then
+        break
+    fi
+
     tput civis
-	trap cleanup EXIT
 
     time=$(echo "$time+1" | bc)
 
