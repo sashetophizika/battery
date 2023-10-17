@@ -2,7 +2,7 @@
 
 colors=false 
 live=false 
-minimal=true
+minimal=false
 
 while getopts "hclm" option; do
       case $option in

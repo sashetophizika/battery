@@ -1,6 +1,6 @@
 # battery
 
-Simple utility to check battery state that uses upower
+Simple utility to check battery state that uses upower.
 
 ## Installation
 
@@ -23,12 +23,10 @@ With colors:
 battery -c
 ```
 
-To stay and monitor live:
+To stay and monitor live (`q` or `Ecs` to exit):
 ```
 battery -l
 ```
-To escape live view press `q` or `Ecs`. 
-
 
 For minimalistic text output:
 ```
