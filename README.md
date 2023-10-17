@@ -1,6 +1,7 @@
 # battery
 
 Simple utility to check battery state that uses upower.
+![image](screenshot.png "screenshot")
 
 ## Installation
 
