@@ -7,8 +7,8 @@ Simple utility to check battery state that uses upower.
 
 ```bash
 git clone https://github.com/sasheto-phizika/battery.git
-mv battery/battery ~/.local/bin # user installation
-sudo mv battery/battery/ /usr/bin # system installaion
+cp battery/battery ~/.local/bin # user installation
+sudo cp battery/battery/ /usr/bin # system installaion
 
 ```
 

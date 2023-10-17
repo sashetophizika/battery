@@ -4,6 +4,8 @@ colors=false
 live=false 
 minimal=false
 
+bodyc=
+
 while getopts "hclm" option; do
       case $option in
     c)
@@ -98,11 +100,13 @@ fi
 
 previous_bat=0
 previous_charge=0
+rows=0
+cols=0
 
 while [ 0 ]
 do
     if [ $(echo "$time % 10" | bc) -eq 0 ]; then
-        if [[ "$previous_charge" == "$charging" ]] && [[ "$previous_bat" == "$bat" ]]; then
+        if [[ "$previous_charge" == "$charging" ]] && [[ "$previous_bat" == "$bat" ]] && [[ $(tput lines) == "$rows" ]] && [[ $(tput cols) == "$cols" ]]; then
             quit? || break
             continue
         fi
@@ -113,7 +117,10 @@ do
         charge_color='\033[0m'
         NC='\033[0m'
 
-        let rows=$(tput lines) newl=rows/2-3
+        rows=$(tput lines)
+        cols=$(tput cols)
+
+        let rows=$rows newl=rows/2-3
 
         i=0
 
@@ -122,7 +129,7 @@ do
             ((i++))
         done 
 
-        let cols=$(tput cols) newl=cols/2-25
+        let cols=$cols indent=cols/2-28
 
         if [[ $colors == true ]]; then 
             battery_color='\e[38;2;166;227;161m'
@@ -138,24 +145,24 @@ do
         fi
 
 
-        megaintdent $newl 
+        megaintdent $indent 
         printf "████████████████████████████████████████\n"
 
-        megaintdent $newl
+        megaintdent $indent
         printbat $bat 0
         echo " " 
 
-        megaintdent $newl
+        megaintdent $indent
         printbat $bat 1
         echo " "
-        megaintdent $newl
+        megaintdent $indent
         printbat $bat 1
 
         if [ $charging -eq 1 ]; then	
             printf "       ${charge_color}████████${NC}"
         fi
         echo " "			
-        megaintdent $newl
+        megaintdent $indent
         printbat $bat 1
 
         if [ $charging -eq 1 ]; then	
@@ -163,18 +170,18 @@ do
         fi
         echo " "
 
-        megaintdent $newl
+        megaintdent $indent
         printbat $bat 1
         echo " "
 
-        megaintdent $newl
+        megaintdent $indent
         printbat $bat 0
         echo " "
 
-        megaintdent $newl
+        megaintdent $indent
         printf "████████████████████████████████████████\n"
 
-        let rows=$(tput lines) newl=rows/2-5
+        let rows=$rows newl=rows/2-5
 
         i=0
         while [ $i -le $newl ]; do 
