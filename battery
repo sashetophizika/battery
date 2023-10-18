@@ -86,8 +86,6 @@ quit? () {
     return 0
 }
 
-time=0
-
 bat=$(upower -i /org/freedesktop/UPower/devices/DisplayDevice | grep -E '[[:digit:]]{1,}%' | tr -dc 0-9)
 upower -i /org/freedesktop/UPower/devices/DisplayDevice | grep 'discharging' > /dev/null
 charging=$?
@@ -105,105 +103,101 @@ cols=0
 
 while [ 0 ]
 do
-    if [ $(echo "$time % 10" | bc) -eq 0 ]; then
-        if [[ "$previous_charge" == "$charging" ]] && [[ "$previous_bat" == "$bat" ]] && [[ $(tput lines) == "$rows" ]] && [[ $(tput cols) == "$cols" ]]; then
-            quit? || break
-            continue
+    if [[ "$previous_charge" == "$charging" ]] && [[ "$previous_bat" == "$bat" ]] && [[ $(tput lines) == "$rows" ]] && [[ $(tput cols) == "$cols" ]]; then
+        quit? || break
+        continue
+    fi
+
+    clear
+
+    battery_color='\033[0m'
+    charge_color='\033[0m'
+    NC='\033[0m'
+
+    rows=$(tput lines)
+    cols=$(tput cols)
+
+    let rows=$rows newl=rows/2-3
+
+    i=0
+
+    while [ $i -le $newl ]; do 
+        printf "\n"
+        ((i++))
+    done 
+
+    let cols=$cols indent=cols/2-28
+
+    if [[ $colors == true ]]; then 
+        battery_color='\e[38;2;166;227;161m'
+        charge_color='\e[38;2;116;199;236m'
+    
+        if [ $bat -lt 60 ]; then
+            battery_color='\e[38;2;250;179;135m'
         fi
 
-        clear
-
-        battery_color='\033[0m'
-        charge_color='\033[0m'
-        NC='\033[0m'
-
-        rows=$(tput lines)
-        cols=$(tput cols)
-
-        let rows=$rows newl=rows/2-3
-
-        i=0
-
-        while [ $i -le $newl ]; do 
-            printf "\n"
-            ((i++))
-        done 
-
-        let cols=$cols indent=cols/2-28
-
-        if [[ $colors == true ]]; then 
-            battery_color='\e[38;2;166;227;161m'
-            charge_color='\e[38;2;116;199;236m'
-        
-            if [ $bat -lt 60 ]; then
-                battery_color='\e[38;2;250;179;135m'
-            fi
-
-            if [ $bat -lt 20 ]; then
-                battery_color='\e[38;2;243;139;168m'
-            fi
+        if [ $bat -lt 20 ]; then
+            battery_color='\e[38;2;243;139;168m'
         fi
+    fi
 
 
-        megaintdent $indent 
-        printf "████████████████████████████████████████\n"
+    megaintdent $indent 
+    printf "████████████████████████████████████████\n"
 
-        megaintdent $indent
-        printbat $bat 0
-        echo " " 
+    megaintdent $indent
+    printbat $bat 0
+    echo " " 
 
-        megaintdent $indent
-        printbat $bat 1
-        echo " "
-        megaintdent $indent
-        printbat $bat 1
+    megaintdent $indent
+    printbat $bat 1
+    echo " "
+    megaintdent $indent
+    printbat $bat 1
 
-        if [ $charging -eq 1 ]; then	
-            printf "       ${charge_color}████████${NC}"
-        fi
-        echo " "			
-        megaintdent $indent
-        printbat $bat 1
+    if [ $charging -eq 1 ]; then	
+        printf "       ${charge_color}████████${NC}"
+    fi
+    echo " "			
+    megaintdent $indent
+    printbat $bat 1
 
-        if [ $charging -eq 1 ]; then	
-            printf "    ${charge_color}████████${NC}"
-        fi
-        echo " "
+    if [ $charging -eq 1 ]; then	
+        printf "    ${charge_color}████████${NC}"
+    fi
+    echo " "
 
-        megaintdent $indent
-        printbat $bat 1
-        echo " "
+    megaintdent $indent
+    printbat $bat 1
+    echo " "
 
-        megaintdent $indent
-        printbat $bat 0
-        echo " "
+    megaintdent $indent
+    printbat $bat 0
+    echo " "
 
-        megaintdent $indent
-        printf "████████████████████████████████████████\n"
+    megaintdent $indent
+    printf "████████████████████████████████████████\n"
 
-        let rows=$rows newl=rows/2-5
+    let rows=$rows newl=rows/2-5
 
-        i=0
-        while [ $i -le $newl ]; do 
-            printf "\n"
-            ((i++))
-        done
+    i=0
+    while [ $i -le $newl ]; do 
+        printf "\n"
+        ((i++))
+    done
 
-        previous_bat=$bat
-        previous_charge=$charging
+    previous_bat=$bat
+    previous_charge=$charging
 
-        bat=$(upower -i /org/freedesktop/UPower/devices/DisplayDevice | grep -E '[[:digit:]]{1,}%' | tr -dc 0-9)
-        upower -i /org/freedesktop/UPower/devices/DisplayDevice | grep 'discharging' > /dev/null
-        charging=$?
-    fi 
+    bat=$(upower -i /org/freedesktop/UPower/devices/DisplayDevice | grep -E '[[:digit:]]{1,}%' | tr -dc 0-9)
+    upower -i /org/freedesktop/UPower/devices/DisplayDevice | grep 'discharging' > /dev/null
+    charging=$?
 
     if [[ $live == false ]]; then
         break
     fi
 
     tput civis
-
-    time=$(echo "$time+1" | bc)
 
     quit? || break
 
