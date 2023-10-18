@@ -1,12 +1,12 @@
 # Battery
 
-Simple utility to check battery state that uses upower.
+Simple utility to check battery state that uses upower.\
 ![image](screenshot.png "screenshot")
 
 ## Installation
 
 Dependencies:\
-[upower](https://gitlab.freedesktop.org/upower/upower)(Tested on version 1.90.2-1)
+[upower](https://gitlab.freedesktop.org/upower/upower) (Tested on version 1.90.2-1), which could be found in most distro repositories 
 
 
 ```bash
