@@ -1,10 +1,13 @@
 #!/bin/bash
 
+color100p="\033[0;32m"
+color60p="\033[0;33m"
+color20p="\033[0;31m"
+color_charge="\033[0;36m"
+
 colors=false 
 live=false 
 minimal=false
-
-bodyc=
 
 while getopts ":hclm" option; do
       case $option in
@@ -126,15 +129,15 @@ do
     let cols=$cols indent=cols/2-28
 
     if [[ $colors == true ]]; then 
-        battery_color='\033[0;32m'
-        charge_color='\033[1;36m'
+        battery_color=$color100p
+        charge_color=$color_charge
     
         if [ $bat -lt 60 ]; then
-            battery_color='\033[0;33m' 
+            battery_color=$color60p
         fi
 
         if [ $bat -lt 20 ]; then
-            battery_color='\033[0;31m'
+            battery_color=$color20p
         fi
     fi
 
