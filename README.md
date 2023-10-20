@@ -1,6 +1,6 @@
 # Battery
 
-Simple utility to check battery state that uses upower.\
+Simple utility to check battery state that uses upower.
 ![image](screenshot.png "screenshot")
 
 ## Installation
@@ -27,7 +27,7 @@ With colors:
 ```
 battery -c
 ```
-If you want to change the colors, modify the top of the script using ANSI escape codes (`\033[38;2;R;G;Bm` format for terminals with true color support).\
+If you want to change the colors, modify the top of the script using ANSI escape codes (`\033[38;2;R;G;Bm` format for terminals with true color support).
 
 To stay and monitor live (`q` or `Ecs` to exit):
 ```
