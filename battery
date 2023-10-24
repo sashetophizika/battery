@@ -97,6 +97,8 @@ printbat () {
 
     if [ $charging -eq 1 ]; then	
         printf "       ${charge_color}████████${NC}"
+    else
+        printf "               "
     fi
 
     tput cup $(($newl+4)) $indent
@@ -104,6 +106,8 @@ printbat () {
 
     if [ $charging -eq 1 ]; then	
         printf "    ${charge_color}████████${NC}"
+    else
+        printf "            "
     fi
 
     
