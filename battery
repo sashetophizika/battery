@@ -181,7 +181,6 @@ else
 fi
 
 tput civis
-tput invis
 clear
 main_loop
 
