@@ -3,6 +3,7 @@
 color100p="\033[0;32m"
 color60p="\033[0;33m"
 color20p="\033[0;31m"
+color_shell="\033[0m"
 color_charge="\033[0;36m"
 
 colors=false 
@@ -62,7 +63,7 @@ done
 batpiece () {
 i=0
 
-printf "██"
+printf "${shell_color}██"
 
 while [ $i -le 100 ]; do
 	if [ $i -le $blocks ]; then
@@ -75,16 +76,16 @@ while [ $i -le 100 ]; do
 done
 
 if [ $1 -eq 0 ]; then
-	printf "████"
+	printf "${shell_color}████"
 else 
-	printf "████████"
+	printf "${shell_color}████████"
 fi
 
 }
 
 printbat () {
     tput cup $newl $indent
-    printf "████████████████████████████████████████\n"
+    printf "${shell_color}████████████████████████████████████████\n"
 
     tput cup $(($newl+1)) $indent
     batpiece 0
@@ -96,7 +97,7 @@ printbat () {
     batpiece 1
 
     if [ $charging -eq 1 ]; then	
-        printf "       ${charge_color}████████${NC}"
+        printf "       ${charge_color}████████"
     else
         printf "               "
     fi
@@ -105,7 +106,7 @@ printbat () {
     batpiece 1
 
     if [ $charging -eq 1 ]; then	
-        printf "    ${charge_color}████████${NC}"
+        printf "    ${charge_color}████████"
     else
         printf "            "
     fi
@@ -119,7 +120,7 @@ printbat () {
     batpiece 0
 
     tput cup $(($newl+7)) $indent
-    printf "████████████████████████████████████████\n"
+    printf "${shell_color}████████████████████████████████████████\n"
 }
 
 bat_status () { 
@@ -172,12 +173,13 @@ if [[ $minimal == true ]]; then
     exit 0
 fi
 
-NC='\033[0m'
 battery_color='\033[0m'
 if [[ $colors == true ]]; then
     charge_color=$color_charge
+    shell_color=$color_shell
 else
     charge_color='\033[0m'
+    shell_color='\033[0m'
 fi
 
 tput civis
