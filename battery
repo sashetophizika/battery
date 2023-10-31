@@ -5,12 +5,14 @@ color60p="\033[0;33m"
 color20p="\033[0;31m"
 color_shell="\033[0m"
 color_charge="\033[0;36m"
+NC="\033[0m"
 
 colors=false 
 live=false 
 minimal=false
+small=false
 
-while getopts ":hclm" option; do
+while getopts ":hclms" option; do
       case $option in
     c)
         colors=true
@@ -21,13 +23,17 @@ while getopts ":hclm" option; do
     m)
         minimal=true
         ;;
+    s)
+        small=true
+        ;;
     h)
         echo "Usage:" 
-        echo "  battery [-clm]"
+        echo "  battery [-clsm]"
         echo " "
         echo "OPTIONS"
         echo "  -c   Add colors"
         echo "  -l   Monitor the battery live"
+        echo "  -s   Use a small version of the battery instead"
         echo "  -m   Minimal print of the battery status" 
         exit 0
         ;;
@@ -42,7 +48,7 @@ cnorm () {
     tput cnorm
 }
 
-if [[ $minimal == false ]]; then
+if [[ $minimal == false ]] && [[ $small == false ]]; then
     if [[ $live == true ]]; then
         trap reset EXIT
     else
@@ -57,7 +63,7 @@ printf "${shell_color}██"
 
 while [ $i -le 100 ]; do
 	if [ $i -le $blocks ]; then
-		printf "${battery_color}█${NC}"
+		printf "${battery_color}█"
 	else
 		printf " "
 	fi
@@ -123,6 +129,20 @@ bat_status () {
     charging=$?
  }
 
+core_color () {
+    if [[ $colors == true ]]; then 
+        battery_color=$color100p
+
+        if [ $bat -lt 60 ]; then
+            battery_color=$color60p
+        fi
+
+        if [ $bat -lt 20 ]; then
+            battery_color=$color20p
+        fi
+    fi
+}
+
 quit? () {
     read -sn 1 -t 0.1 quit 
     if [ "$quit" = "q" ] || [ "$quit" = $'\e' ]; then 
@@ -140,18 +160,7 @@ main_loop () {
     let rows=$rows newl=rows/2-3
     let cols=$cols indent=cols/2-28
 
-    if [[ $colors == true ]]; then 
-        battery_color=$color100p
-
-        if [ $bat -lt 60 ]; then
-            battery_color=$color60p
-        fi
-
-        if [ $bat -lt 20 ]; then
-            battery_color=$color20p
-        fi
-    fi
-
+    core_color
     printbat
 
 }
@@ -163,13 +172,58 @@ if [[ $minimal == true ]]; then
     exit 0
 fi
 
-battery_color='\033[0m'
+battery_color=$NC
 if [[ $colors == true ]]; then
     charge_color=$color_charge
     shell_color=$color_shell
 else
-    charge_color='\033[0m'
-    shell_color='\033[0m'
+    charge_color=$NC
+    shell_color=$NC
+fi
+
+smallpiece() {
+let blocks=$bat/7*7
+i=0
+
+printf "${shell_color}██"
+
+while [ $i -le 100 ]; do
+	if [ $i -le $blocks ]; then
+		printf "${battery_color}█"
+	else
+		printf " "
+	fi
+
+	((i+=7))
+done
+
+	printf "${shell_color}████"
+}
+
+if [[ $small == true ]]; then
+    bat_status
+    core_color
+
+    printf "${shell_color}███████████████████\n"
+
+    smallpiece
+
+    if [ $charging -eq 1 ]; then	
+        printf "    ${charge_color}▄▄▄\n"
+    else
+        printf "               "
+    fi
+
+    smallpiece
+
+    if [ $charging -eq 1 ]; then	
+        printf "   ${charge_color}▀▀▀\n"
+    else
+        printf "            "
+    fi
+
+    printf "${shell_color}███████████████████\n"
+    exit 0
 fi
 
 tput civis
