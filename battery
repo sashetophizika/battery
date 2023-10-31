@@ -211,7 +211,7 @@ if [[ $small == true ]]; then
     if [ $charging -eq 1 ]; then	
         printf "    ${charge_color}▄▄▄\n"
     else
-        printf "               "
+        printf "               \n"
     fi
 
     smallpiece
@@ -219,7 +219,7 @@ if [[ $small == true ]]; then
     if [ $charging -eq 1 ]; then	
         printf "   ${charge_color}▀▀▀\n"
     else
-        printf "            "
+        printf "            \n"
     fi
 
     printf "${shell_color}███████████████████\n"
