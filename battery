@@ -50,16 +50,6 @@ if [[ $minimal == false ]]; then
     fi
 fi
 
-megaintdent () {
-i=0
-
-while [ $i -le $1 ]; do 
-	printf " "
-	((i++))
-done	
-
-}
-
 batpiece () {
 i=0
 
