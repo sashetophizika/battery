@@ -72,7 +72,7 @@ if [[ $blocks == 0 ]]; then
 
 else
     while [ $i -le 100 ]; do
-        if [ $i -lt $blocks ]; then
+        if [ $i -le $blocks ]; then
             printf "${battery_color}█"
         else
             printf " "
