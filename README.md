@@ -5,14 +5,10 @@ Simple utility to check battery state that uses upower.
 
 ## Installation
 
-Dependencies:\
-[upower](https://gitlab.freedesktop.org/upower/upower) (Tested on version 1.90.2-1), which could be found in most distro repositories 
-
-
 ```bash
 git clone https://github.com/sasheto-phizika/battery.git
 cp battery/battery ~/.local/bin # user installation
-sudo cp battery/battery/ /usr/bin # system installaion
+sudo cp battery/battery /usr/bin # system installaion
 
 ```
 
@@ -42,4 +38,10 @@ For minimalistic text output:
 ```
 battery -m
 ```
-The `-m` flag overwrites all other ones.
+The `-m` flag overwrites flags above.
+
+To specify the battery:
+```
+battery -b $BAT_NUMBER
+```
+The default is the one with the smallest number found in `/sys/class/power_supply/` (usually 0, equivalent to `-b 0`).

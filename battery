@@ -12,7 +12,9 @@ live=false
 minimal=false
 small=false
 
-while getopts ":hclms" option; do
+bat_number="$(find /sys/class/power_supply -iname 'BAT*' | sort -g | head -n 1)"
+
+while getopts ":hclmsb:" option; do
       case $option in
     c)
         colors=true
@@ -25,6 +27,13 @@ while getopts ":hclms" option; do
         ;;
     s)
         small=true
+        ;;
+    b)
+        bat_number="/sys/class/power_supply/BAT$OPTARG"
+        if [ ! -d $bat_number ]; then
+            echo "Battery not found! $bat_number does not exist."
+            exit 1
+        fi
         ;;
     h)
         echo "Usage:" 
@@ -133,10 +142,15 @@ bat_status () {
     previous_bat=$bat
     previous_charge=$charging
 
-    bat=$(upower -i /org/freedesktop/UPower/devices/DisplayDevice | grep -E '[[:digit:]]{1,}%' | tr -dc 0-9)
+    bat=$(cat "$bat_number/capacity")
     let blocks=$bat/3*3
-    upower -i /org/freedesktop/UPower/devices/DisplayDevice | grep 'discharging' > /dev/null
-    charging=$?
+
+    status=$(cat "$bat_number/status")
+    if [[ $status == "Discharging" ]] || [[ $status == "Not charging" ]]; then
+        charging=0
+    else
+        charging=1
+    fi
  }
 
 core_color () {
@@ -178,7 +192,11 @@ main_loop () {
 if [[ $minimal == true ]]; then
     bat_status
     echo "Battery: $bat%"
-    echo "Charging: $charging"
+    if [[ $charging == 1 ]]; then
+        echo "Charging: True"
+    else
+        echo "Charging: False"
+    fi
     exit 0
 fi
 
