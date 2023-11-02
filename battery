@@ -61,22 +61,32 @@ i=0
 
 printf "${shell_color}██"
 
-while [ $i -le 100 ]; do
-	if [ $i -le $blocks ]; then
-		printf "${battery_color}█"
-	else
-		printf " "
-	fi
+if [[ $blocks == 0 ]]; then
+    printf "                                  "
 
-	((i+=3))
-done
+    if [ $1 -eq 0 ]; then
+        printf "${shell_color}████"
+    else 
+        printf "${shell_color}████████"
+    fi
 
-if [ $1 -eq 0 ]; then
-	printf "${shell_color}████"
-else 
-	printf "${shell_color}████████"
+else
+    while [ $i -le 100 ]; do
+        if [ $i -lt $blocks ]; then
+            printf "${battery_color}█"
+        else
+            printf " "
+        fi
+
+        ((i+=3))
+    done
+
+    if [ $1 -eq 0 ]; then
+        printf "${shell_color}████"
+    else 
+        printf "${shell_color}████████"
+    fi
 fi
-
 }
 
 printbat () {
@@ -187,29 +197,35 @@ i=0
 
 printf "${shell_color}██"
 
-while [ $i -le 100 ]; do
-	if [ $i -le $blocks ]; then
-		printf "${battery_color}█"
-	else
-		printf " "
-	fi
+if [[ $blocks == 0 ]]; then 
+    printf "               ${shell_color}███▊"
+else
+    while [ $i -le 100 ]; do
+        if [ $i -le $blocks ]; then
+            printf "${battery_color}█"
+        else
+            printf " "
+        fi
 
-	((i+=7))
-done
+        ((i+=7))
+    done
 
-	printf "${shell_color}████"
+        printf "${shell_color}███▊"
+fi
+
 }
 
 if [[ $small == true ]]; then
     bat_status
     core_color
 
+    echo ""
     printf "${shell_color}███████████████████\n"
 
     smallpiece
 
     if [ $charging -eq 1 ]; then	
-        printf "    ${charge_color}▄▄▄\n"
+        printf "   ${charge_color}▄▄▄\n"
     else
         printf "               \n"
     fi
@@ -217,7 +233,7 @@ if [[ $small == true ]]; then
     smallpiece
 
     if [ $charging -eq 1 ]; then	
-        printf "   ${charge_color}▀▀▀\n"
+        printf "  ${charge_color}▀▀▀\n"
     else
         printf "            \n"
     fi
