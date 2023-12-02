@@ -29,7 +29,7 @@ To stay and monitor live (`q` or `Ecs` to exit):
 ```
 battery -l
 ```
-For a small inline battery (does not work with `-l`):
+For a small inline battery (also works with `-l`):
 ```
 battery -s
 ```

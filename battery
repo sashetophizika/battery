@@ -57,12 +57,56 @@ cnorm () {
     tput cnorm
 }
 
-if [[ $minimal == false ]] && [[ $small == false ]]; then
+cnorm_small () {
+    tput cud 5
+    tput cnorm
+}
+
+if [[ $minimal == false ]] ; then
     if [[ $live == true ]]; then
-        trap reset EXIT
-    else
+        if [[ $small == true ]]; then
+            trap cnorm_small EXIT
+        else
+            trap reset EXIT
+        fi
+    else 
         trap cnorm EXIT
     fi
+fi
+
+quit? () {
+    read -sn 1 -t 0.1 quit 
+    if [ "$quit" = "q" ] || [ "$quit" = $'\e' ]; then 
+        return 1
+    fi
+    return 0
+}
+
+bat_status () { 
+    previous_bat=$bat
+    previous_charge=$charging
+
+    bat=$(cat "$bat_number/capacity")
+    let blocks=$bat/3*3
+
+    status=$(cat "$bat_number/status")
+    if [[ $status == "Discharging" ]] || [[ $status == "Not charging" ]]; then
+        charging=0
+    else
+        charging=1
+    fi
+ }
+
+
+if [[ $minimal == true ]]; then
+    bat_status
+    echo "Battery: $bat%"
+    if [[ $charging == 1 ]]; then
+        echo "Charging: True"
+    else
+        echo "Charging: False"
+    fi
+    exit 0
 fi
 
 batpiece () {
@@ -138,45 +182,7 @@ printbat () {
     printf "${shell_color}████████████████████████████████████████\n"
 }
 
-bat_status () { 
-    previous_bat=$bat
-    previous_charge=$charging
-
-    bat=$(cat "$bat_number/capacity")
-    let blocks=$bat/3*3
-
-    status=$(cat "$bat_number/status")
-    if [[ $status == "Discharging" ]] || [[ $status == "Not charging" ]]; then
-        charging=0
-    else
-        charging=1
-    fi
- }
-
-core_color () {
-    if [[ $colors == true ]]; then 
-        battery_color=$color100p
-
-        if [ $bat -lt 60 ]; then
-            battery_color=$color60p
-        fi
-
-        if [ $bat -lt 20 ]; then
-            battery_color=$color20p
-        fi
-    fi
-}
-
-quit? () {
-    read -sn 1 -t 0.1 quit 
-    if [ "$quit" = "q" ] || [ "$quit" = $'\e' ]; then 
-        return 1
-    fi
-
-    return 0
-}
-
-main_loop () {
+big_loop () {
     bat_status
     rows=$(tput lines)
     cols=$(tput cols)
@@ -186,28 +192,7 @@ main_loop () {
 
     core_color
     printbat
-
 }
-
-if [[ $minimal == true ]]; then
-    bat_status
-    echo "Battery: $bat%"
-    if [[ $charging == 1 ]]; then
-        echo "Charging: True"
-    else
-        echo "Charging: False"
-    fi
-    exit 0
-fi
-
-battery_color=$NC
-if [[ $colors == true ]]; then
-    charge_color=$color_charge
-    shell_color=$color_shell
-else
-    charge_color=$NC
-    shell_color=$NC
-fi
 
 smallpiece() {
 let blocks=$bat/7*7
@@ -233,52 +218,90 @@ fi
 
 }
 
-if [[ $small == true ]]; then
-    bat_status
-    core_color
+smallbat() {
+        echo ""
+        printf "${shell_color}███████████████████\n"
 
-    echo ""
-    printf "${shell_color}███████████████████\n"
+        smallpiece
 
-    smallpiece
+        if [ $charging -eq 1 ]; then	
+            printf "   ${charge_color}▄▄▄\n"
+        else
+            printf "               \n"
+        fi
 
-    if [ $charging -eq 1 ]; then	
-        printf "   ${charge_color}▄▄▄\n"
+        smallpiece
+
+        if [ $charging -eq 1 ]; then	
+            printf "  ${charge_color}▀▀▀\n"
+        else
+            printf "            \n"
+        fi
+
+        printf "${shell_color}███████████████████\n"
+}
+
+
+
+small_loop() {
+        bat_status
+        core_color
+        smallbat
+}
+
+main_loop() {
+    if [[ $small == true ]]; then
+        small_loop
+        tput cuu 5
     else
-        printf "               \n"
+        clear
+        big_loop
     fi
+}
 
-    smallpiece
+core_color () {
+    if [[ $colors == true ]]; then 
+        battery_color=$color100p
 
-    if [ $charging -eq 1 ]; then	
-        printf "  ${charge_color}▀▀▀\n"
-    else
-        printf "            \n"
+        if [ $bat -lt 60 ]; then
+            battery_color=$color60p
+        fi
+
+        if [ $bat -lt 20 ]; then
+            battery_color=$color20p
+        fi
     fi
+}
 
-    printf "${shell_color}███████████████████\n"
-    exit 0
+battery_color=$NC
+if [[ $colors == true ]]; then
+    charge_color=$color_charge
+    shell_color=$color_shell
+else
+    charge_color=$NC
+    shell_color=$NC
 fi
 
 tput civis
-clear
 main_loop
 
 if [[ $live == false ]]; then
-    tput cup $(tput lines) 0 
+    if [[ $small == true ]]; then
+        tput cud 5
+    else
+        tput cup $(tput lines) 0 
+    fi
 else
-    while [ 0 ]
-    do
+    while [ 0 ]; do
         if [[ $(tput lines) != "$rows" ]] || [[ $(tput cols) != "$cols" ]]; then
-            quit? || break
-            clear
             main_loop
+            quit? || break
             continue
         fi
 
         if [[ "$previous_charge" != "$charging" ]] || [[ "$previous_bat" != "$bat" ]]; then
-            quit? || break
             main_loop
+            quit? || break
             continue
         fi
 
