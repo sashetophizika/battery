@@ -7,17 +7,17 @@ color_shell="\033[0m"
 color_charge="\033[0;36m"
 NC="\033[0m"
 
-colors=false 
+colors=true 
 live=false 
 minimal=false
 small=false
 
 bat_number="$(find /sys/class/power_supply -iname 'BAT*' | sort -g | head -n 1)"
 
-while getopts ":hclmsb:" option; do
+while getopts ":hnlmsb:" option; do
       case $option in
-    c)
-        colors=true
+    n)
+        colors=false
         ;;
     l)
         live=true
@@ -37,13 +37,14 @@ while getopts ":hclmsb:" option; do
         ;;
     h)
         echo "Usage:" 
-        echo "  battery [-clsm]"
+        echo "  battery [-lsmbn]"
         echo " "
         echo "OPTIONS"
-        echo "  -c   Add colors"
-        echo "  -l   Monitor the battery live"
-        echo "  -s   Use a small version of the battery instead"
-        echo "  -m   Minimal print of the battery status" 
+        echo "  -l              Monitor the battery live"
+        echo "  -s              Use a small version of the battery instead"
+        echo "  -m              Minimal print of the battery status" 
+        echo "  -n              Remove colors"
+        echo "  -b BAT_NUMBER   Specify battery number"
         exit 0
         ;;
     esac
