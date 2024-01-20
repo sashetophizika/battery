@@ -1,7 +1,11 @@
 # Battery
 
-Simple utility to check battery state that uses upower.
+Simple utility to monitor the battery in a stylish manner.
+### Simple utility to monitor the battery in a stylish manner.
+
 ![image](screenshot.png "screenshot")
+### Small version:
+![image](screenshot_small.png "screenshot_small")
 
 ## Installation
 
