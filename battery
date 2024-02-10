@@ -96,8 +96,21 @@ bat_status () {
     else
         charging=1
     fi
- }
+}
 
+core_color () {
+    if [[ $colors == true ]]; then 
+        battery_color=$color100p
+
+        if [ $bat -lt 60 ]; then
+            battery_color=$color60p
+        fi
+
+        if [ $bat -lt 20 ]; then
+            battery_color=$color20p
+        fi
+    fi
+}
 
 if [[ $minimal == true ]]; then
     bat_status
@@ -118,12 +131,6 @@ printf "${shell_color}██"
 if [[ $blocks == 0 ]]; then
     printf "                                  "
 
-    if [ $1 -eq 0 ]; then
-        printf "${shell_color}████"
-    else 
-        printf "${shell_color}████████"
-    fi
-
 else
     while [ $i -le 100 ]; do
         if [ $i -le $blocks ]; then
@@ -135,11 +142,12 @@ else
         ((i+=3))
     done
 
-    if [ $1 -eq 0 ]; then
-        printf "${shell_color}████"
-    else 
-        printf "${shell_color}████████"
-    fi
+fi
+
+if [ $1 -eq 0 ]; then
+    printf "${shell_color}████"
+else 
+    printf "${shell_color}████████"
 fi
 }
 
@@ -242,8 +250,6 @@ smallbat() {
         printf "${shell_color}███████████████████\n"
 }
 
-
-
 small_loop() {
         bat_status
         core_color
@@ -255,22 +261,8 @@ main_loop() {
         small_loop
         tput cuu 5
     else
-        clear
+        $1 || clear
         big_loop
-    fi
-}
-
-core_color () {
-    if [[ $colors == true ]]; then 
-        battery_color=$color100p
-
-        if [ $bat -lt 60 ]; then
-            battery_color=$color60p
-        fi
-
-        if [ $bat -lt 20 ]; then
-            battery_color=$color20p
-        fi
     fi
 }
 
@@ -281,6 +273,11 @@ if [[ $colors == true ]]; then
 else
     charge_color=$NC
     shell_color=$NC
+fi
+
+
+if [[ $small == false ]]; then
+    clear
 fi
 
 tput civis
@@ -295,15 +292,11 @@ if [[ $live == false ]]; then
 else
     while [ 0 ]; do
         if [[ $(tput lines) != "$rows" ]] || [[ $(tput cols) != "$cols" ]]; then
-            main_loop
-            quit? || break
-            continue
+            main_loop ""
         fi
 
         if [[ "$previous_charge" != "$charging" ]] || [[ "$previous_bat" != "$bat" ]]; then
-            main_loop
-            quit? || break
-            continue
+            main_loop 
         fi
 
         quit? || break
