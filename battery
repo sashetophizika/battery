@@ -292,7 +292,7 @@ if [[ $live == false ]]; then
 else
     while [ 0 ]; do
         if [[ $(tput lines) != "$rows" ]] || [[ $(tput cols) != "$cols" ]]; then
-            main_loop ""
+            main_loop "clear"
         fi
 
         if [[ "$previous_charge" != "$charging" ]] || [[ "$previous_bat" != "$bat" ]]; then
