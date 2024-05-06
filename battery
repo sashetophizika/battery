@@ -89,6 +89,15 @@ quit? () {
     read -sn 1 -t 0.1 quit 
     if [ "$quit" = "q" ] || [ "$quit" = $'\e' ]; then 
         return 1
+    else
+        if [[ $quit == "d" ]]; then
+            if [[ $digits == true ]]; then
+                digits=false
+            else
+                digits=true
+            fi
+            main_loop
+        fi
     fi
     return 0
 }
@@ -345,9 +354,9 @@ printfat () {
     batpiece 1
 
     if [ $charging -eq 1 ]; then	
-        printf "          ${charge_color}████████"
+        printf "         ${charge_color}████████"
     else
-        printf "                  "
+        printf "                 "
     fi
 
 
@@ -355,18 +364,18 @@ printfat () {
     batpiece 1
 
     if [ $charging -eq 1 ]; then	
-        printf "       ${charge_color}████████"
+        printf "      ${charge_color}████████"
     else
-        printf "               "
+        printf "              "
     fi
     
     tput cup $(($newl+5)) $indent
     batpiece 1
 
     if [ $charging -eq 1 ]; then	
-        printf "    ${charge_color}████████"
+        printf "   ${charge_color}████████"
     else
-        printf "            "
+        printf "           "
     fi
 
     tput cup $(($newl+6)) $indent

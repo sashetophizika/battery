@@ -34,7 +34,7 @@ If you want a slightly thicker battery:
 battery -f
 
 ```
-To print the current battery as a number inside the pictue (doesn't work with `-s`):
+To print the current battery as a number inside the picture and can be toggled by pressing `d` in live mode (doesn't work with `-s`):
 ```
 battery -d
 ```
