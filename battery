@@ -11,10 +11,12 @@ colors=true
 live=false 
 minimal=false
 small=false
+digits=false
+fat=false
 
 bat_number="$(find /sys/class/power_supply -iname 'BAT*' | sort -g | head -n 1)"
 
-while getopts ":hnlmsb:" option; do
+while getopts ":hnlmsdfb:" option; do
       case $option in
     n)
         colors=false
@@ -27,6 +29,12 @@ while getopts ":hnlmsb:" option; do
         ;;
     s)
         small=true
+        ;;
+    d)
+        digits=true
+        ;;
+    f)
+        fat=true
         ;;
     b)
         bat_number="/sys/class/power_supply/BAT$OPTARG"
@@ -83,6 +91,209 @@ quit? () {
     return 0
 }
 
+core_color () {
+    if [[ $colors == true ]]; then 
+        battery_color=$color100p
+
+        if [ $bat -lt 60 ]; then
+            battery_color=$color60p
+        fi
+
+        if [ $bat -lt 20 ]; then
+            battery_color=$color20p
+        fi
+    fi
+}
+
+print_digit () {
+    tput cup $2 $3
+    core_color
+    case $1 in 
+        1) 
+            printf "    "
+            tput cud 1
+            tput cub 4
+            tput cuf 2
+            printf "  "
+            tput cud 1
+            tput cub 4
+            tput cuf 2
+            printf "  "
+            tput cud 1
+            tput cub 4
+            tput cuf 2
+            printf "  "
+            tput cud 1
+            tput cub 4
+            printf "      "
+            ;;
+        2) 
+            printf "      "
+            tput cud 1
+            tput cub 6
+            tput cuf 4
+            printf "  "
+            tput cud 1
+            tput cub 6
+            printf "      "
+            tput cud 1
+            tput cub 6
+            printf "  "
+            tput cud 1
+            tput cub 2
+            printf "      "
+            ;;
+        3) 
+            printf "      "
+            tput cud 1
+            tput cub 6
+            tput cuf 4
+            printf "  "
+            tput cud 1
+            tput cub 6
+            printf "      "
+            tput cud 1
+            tput cub 6
+            tput cuf 4
+            printf "  "
+            tput cud 1
+            tput cub 6
+            printf "      "
+            ;;
+        4) 
+            printf "  "
+            tput cuf 2
+            printf "  "
+            tput cud 1
+            tput cub 6
+            printf "  "
+            tput cuf 2
+            printf "  "
+            tput cud 1
+            tput cub 6
+            printf "      "
+            tput cud 1
+            tput cub 6
+            tput cuf 4
+            printf "  "
+            tput cud 1
+            tput cub 6
+            tput cuf 4
+            printf "  "
+            ;;
+        5) 
+            printf "      "
+            tput cud 1
+            tput cub 6
+            printf "  "
+            tput cud 1
+            tput cub 2
+            printf "      "
+            tput cud 1
+            tput cub 6
+            tput cuf 4
+            printf "  "
+            tput cud 1
+            tput cub 6
+            printf "      "
+            ;;
+        6) 
+            printf "      "
+            tput cud 1
+            tput cub 6
+            printf "  "
+            tput cud 1
+            tput cub 2
+            printf "      "
+            tput cud 1
+            tput cub 6
+            printf "  "
+            tput cuf 2
+            printf "  "
+            tput cud 1
+            tput cub 6
+            printf "      "
+            ;;
+        7) 
+            printf "      "
+            tput cud 1
+            tput cub 6
+            tput cuf 4
+            printf "  "
+            tput cud 1
+            tput cub 6
+            tput cuf 4
+            printf "  "
+            tput cud 1
+            tput cub 6
+            tput cuf 4
+            printf "  "
+            tput cud 1
+            tput cub 6
+            tput cuf 4
+            printf "  "
+            ;;
+        8) 
+            printf "      "
+            tput cud 1
+            tput cub 6
+            printf "  "
+            tput cuf 2
+            printf "  "
+            tput cud 1
+            tput cub 6
+            printf "      "
+            tput cud 1
+            tput cub 6
+            printf "  "
+            tput cuf 2
+            printf "  "
+            tput cud 1
+            tput cub 6
+            printf "      "
+            ;;
+        9) 
+            printf "      "
+            tput cud 1
+            tput cub 6
+            printf "  "
+            tput cuf 2
+            printf "  "
+            tput cud 1
+            tput cub 6
+            printf "      "
+            tput cud 1
+            tput cub 6
+            tput cuf 4
+            printf "  "
+            tput cud 1
+            tput cub 6
+            printf "      "
+            ;;
+        0) 
+            printf "      "
+            tput cud 1
+            tput cub 6
+            printf "  "
+            tput cuf 2
+            printf "  "
+            tput cud 1
+            tput cub 6
+            printf "  "
+            tput cuf 2
+            printf "  "
+            tput cud 1
+            tput cub 6
+            printf "  "
+            tput cuf 2
+            printf "  "
+            tput cud 1
+            tput cub 6
+            printf "      "
+            ;;
+    esac
+}
+
 bat_status () { 
     previous_bat=$bat
     previous_charge=$charging
@@ -98,19 +309,6 @@ bat_status () {
     fi
 }
 
-core_color () {
-    if [[ $colors == true ]]; then 
-        battery_color=$color100p
-
-        if [ $bat -lt 60 ]; then
-            battery_color=$color60p
-        fi
-
-        if [ $bat -lt 20 ]; then
-            battery_color=$color20p
-        fi
-    fi
-}
 
 if [[ $minimal == true ]]; then
     bat_status
@@ -150,6 +348,75 @@ else
     printf "${shell_color}████████"
 fi
 }
+print_number () {
+    if [[ $digits == false ]]; then
+        return 0
+    fi
+    if [[ $bat == 100 ]]; then
+        print_digit 1 $(($newl+2)) $(($indent+8))
+        print_digit 0 $(($newl+2)) $(($indent+16))
+        print_digit 0 $(($newl+2)) $(($indent+24))
+    else 
+        if (( $bat < 10 )); then
+            print_digit $bat $(($newl+2)) $(($indent+16))
+        else 
+            print_digit ${bat:0:1} $(($newl+2)) $(($indent+12))
+            print_digit ${bat:1} $(($newl+2)) $(($indent+20))
+        fi
+    fi
+}
+
+printfat () {
+    tput cup $newl $indent
+    printf "${shell_color}████████████████████████████████████████\n"
+
+    tput cup $(($newl+1)) $indent
+    batpiece 0
+
+    tput cup $(($newl+2)) $indent
+    batpiece 1
+
+
+    tput cup $(($newl+3)) $indent
+    batpiece 1
+
+    if [ $charging -eq 1 ]; then	
+        printf "          ${charge_color}████████"
+    else
+        printf "               "
+    fi
+
+
+    tput cup $(($newl+4)) $indent
+    batpiece 1
+
+    if [ $charging -eq 1 ]; then	
+        printf "       ${charge_color}████████"
+    else
+        printf "            "
+    fi
+    
+    tput cup $(($newl+5)) $indent
+    batpiece 1
+
+    if [ $charging -eq 1 ]; then	
+        printf "    ${charge_color}████████"
+    else
+        printf "            "
+    fi
+
+    tput cup $(($newl+6)) $indent
+    batpiece 1
+
+
+    tput cup $(($newl+7)) $indent
+    batpiece 0
+
+    tput cup $(($newl+8)) $indent
+    printf "${shell_color}████████████████████████████████████████\n"
+
+    print_number
+}
 
 printbat () {
     tput cup $newl $indent
@@ -161,6 +428,7 @@ printbat () {
     tput cup $(($newl+2)) $indent
     batpiece 1
 
+
     tput cup $(($newl+3)) $indent
     batpiece 1
 
@@ -170,6 +438,7 @@ printbat () {
         printf "               "
     fi
 
+
     tput cup $(($newl+4)) $indent
     batpiece 1
 
@@ -178,17 +447,17 @@ printbat () {
     else
         printf "            "
     fi
-
     
     tput cup $(($newl+5)) $indent
     batpiece 1
-
 
     tput cup $(($newl+6)) $indent
     batpiece 0
 
     tput cup $(($newl+7)) $indent
     printf "${shell_color}████████████████████████████████████████\n"
+
+    print_number
 }
 
 big_loop () {
@@ -197,10 +466,14 @@ big_loop () {
     cols=$(tput cols)
 
     let rows=$rows newl=rows/2-3
-    let cols=$cols indent=cols/2-28
+    let cols=$cols indent=cols/2-25
 
     core_color
-    printbat
+    if [[ $fat == true ]]; then
+        printfat
+    else
+        printbat
+    fi
 }
 
 smallpiece() {
