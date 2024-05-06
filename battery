@@ -45,11 +45,13 @@ while getopts ":hnlmsdfb:" option; do
         ;;
     h)
         echo "Usage:" 
-        echo "  battery [-lsmbn]"
+        echo "  battery [-lsmbdfn]"
         echo " "
         echo "OPTIONS"
         echo "  -l              Monitor the battery live"
         echo "  -s              Use a small version of the battery instead"
+        echo "  -f              Draws a slightly thicker battery" 
+        echo "  -d              Prints the current battery as a number in the picture" 
         echo "  -m              Minimal print of the battery status" 
         echo "  -n              Remove colors"
         echo "  -b BAT_NUMBER   Specify battery number"
@@ -105,201 +107,154 @@ core_color () {
     fi
 }
 
+print_dpart () {
+    if (( $1 > 0 )); then
+        tput cuf $1
+    fi 
+
+    for i in $(seq $(($1+1)) $2); do
+        if (( $i < $3 )); then
+            printf " "
+        else
+            printf "█"
+        fi
+    done
+    tput cub $2
+}
+
 print_digit () {
     tput cup $2 $3
     core_color
+    printf "$battery_color"
     case $1 in 
-        1) 
-            printf "    "
-            tput cud 1
-            tput cub 4
-            tput cuf 2
-            printf "  "
-            tput cud 1
-            tput cub 4
-            tput cuf 2
-            printf "  "
-            tput cud 1
-            tput cub 4
-            tput cuf 2
-            printf "  "
-            tput cud 1
-            tput cub 4
-            printf "      "
-            ;;
-        2) 
-            printf "      "
-            tput cud 1
-            tput cub 6
-            tput cuf 4
-            printf "  "
-            tput cud 1
-            tput cub 6
-            printf "      "
-            tput cud 1
-            tput cub 6
-            printf "  "
-            tput cud 1
-            tput cub 2
-            printf "      "
-            ;;
-        3) 
-            printf "      "
-            tput cud 1
-            tput cub 6
-            tput cuf 4
-            printf "  "
-            tput cud 1
-            tput cub 6
-            printf "      "
-            tput cud 1
-            tput cub 6
-            tput cuf 4
-            printf "  "
-            tput cud 1
-            tput cub 6
-            printf "      "
-            ;;
-        4) 
-            printf "  "
-            tput cuf 2
-            printf "  "
-            tput cud 1
-            tput cub 6
-            printf "  "
-            tput cuf 2
-            printf "  "
-            tput cud 1
-            tput cub 6
-            printf "      "
-            tput cud 1
-            tput cub 6
-            tput cuf 4
-            printf "  "
-            tput cud 1
-            tput cub 6
-            tput cuf 4
-            printf "  "
-            ;;
-        5) 
-            printf "      "
-            tput cud 1
-            tput cub 6
-            printf "  "
-            tput cud 1
-            tput cub 2
-            printf "      "
-            tput cud 1
-            tput cub 6
-            tput cuf 4
-            printf "  "
-            tput cud 1
-            tput cub 6
-            printf "      "
-            ;;
-        6) 
-            printf "      "
-            tput cud 1
-            tput cub 6
-            printf "  "
-            tput cud 1
-            tput cub 2
-            printf "      "
-            tput cud 1
-            tput cub 6
-            printf "  "
-            tput cuf 2
-            printf "  "
-            tput cud 1
-            tput cub 6
-            printf "      "
-            ;;
-        7) 
-            printf "      "
-            tput cud 1
-            tput cub 6
-            tput cuf 4
-            printf "  "
-            tput cud 1
-            tput cub 6
-            tput cuf 4
-            printf "  "
-            tput cud 1
-            tput cub 6
-            tput cuf 4
-            printf "  "
-            tput cud 1
-            tput cub 6
-            tput cuf 4
-            printf "  "
-            ;;
-        8) 
-            printf "      "
-            tput cud 1
-            tput cub 6
-            printf "  "
-            tput cuf 2
-            printf "  "
-            tput cud 1
-            tput cub 6
-            printf "      "
-            tput cud 1
-            tput cub 6
-            printf "  "
-            tput cuf 2
-            printf "  "
-            tput cud 1
-            tput cub 6
-            printf "      "
-            ;;
-        9) 
-            printf "      "
-            tput cud 1
-            tput cub 6
-            printf "  "
-            tput cuf 2
-            printf "  "
-            tput cud 1
-            tput cub 6
-            printf "      "
-            tput cud 1
-            tput cub 6
-            tput cuf 4
-            printf "  "
-            tput cud 1
-            tput cub 6
-            printf "      "
-            ;;
-        0) 
-            printf "      "
-            tput cud 1
-            tput cub 6
-            printf "  "
-            tput cuf 2
-            printf "  "
-            tput cud 1
-            tput cub 6
-            printf "  "
-            tput cuf 2
-            printf "  "
-            tput cud 1
-            tput cub 6
-            printf "  "
-            tput cuf 2
-            printf "  "
-            tput cud 1
-            tput cub 6
-            printf "      "
-            ;;
+    1) 
+        print_dpart 0 4 $4
+        tput cud 1    
+        print_dpart 2 4 $4
+        tput cud 1    
+        print_dpart 2 4 $4
+        tput cud 1    
+        print_dpart 2 4 $4
+        tput cud 1    
+        print_dpart 0 6 $4
+    ;;                
+    2)                
+        print_dpart 0 6 $4 
+        tput cud 1    
+        print_dpart 4 6 $4 
+        tput cud 1    
+        print_dpart 0 6 $4
+        tput cud 1    
+        print_dpart 0 2 $4 
+        tput cud 1    
+        print_dpart 0 6 $4 
+    ;;                
+    3)                
+        print_dpart 0 6 $4 
+        tput cud 1    
+        print_dpart 4 6 $4 
+        tput cud 1    
+        print_dpart 0 6 $4
+        tput cud 1    
+        print_dpart 4 6 $4 
+        tput cud 1    
+        print_dpart 0 6 $4 
+    ;;                
+    4)                
+        print_dpart 0 2 $4 
+        print_dpart 4 6 $4 
+        tput cud 1    
+        print_dpart 0 2 $4 
+        print_dpart 4 6 $4 
+        tput cud 1    
+        print_dpart 0 6 $4
+        tput cud 1    
+        print_dpart 4 6 $4 
+        tput cud 1    
+        print_dpart 4 6 $4 
+    ;;                
+    5)                
+        print_dpart 0 6 $4 
+        tput cud 1    
+        print_dpart 0 2 $4 
+        tput cud 1    
+        print_dpart 0 6 $4
+        tput cud 1    
+        print_dpart 4 6 $4 
+        tput cud 1    
+        print_dpart 0 6 $4 
+    ;;                
+    6)                
+        print_dpart 0 6 $4 
+        tput cud 1    
+        print_dpart 0 2 $4 
+        tput cud 1    
+        print_dpart 0 6 $4
+        tput cud 1    
+        print_dpart 0 2 $4 
+        print_dpart 4 6 $4 
+        tput cud 1    
+        print_dpart 0 6 $4 
+    ;;                
+    7)                
+        print_dpart 0 6 $4 
+        tput cud 1    
+        print_dpart 4 6 $4 
+        tput cud 1    
+        print_dpart 4 6 $4
+        tput cud 1    
+        print_dpart 4 6 $4 
+        tput cud 1    
+        print_dpart 4 6 $4 
+    ;;                
+    8)                
+        print_dpart 0 6 $4 
+        tput cud 1    
+        print_dpart 0 2 $4 
+        print_dpart 4 6 $4 
+        tput cud 1    
+        print_dpart 0 6 $4
+        tput cud 1    
+        print_dpart 0 2 $4 
+        print_dpart 4 6 $4 
+        tput cud 1    
+        print_dpart 0 6 $4 
+    ;;                
+    9)                
+        print_dpart 0 6 $4 
+        tput cud 1    
+        print_dpart 0 2 $4 
+        print_dpart 4 6 $4 
+        tput cud 1    
+        print_dpart 0 6 $4
+        tput cud 1    
+        print_dpart 4 6 $4 
+        tput cud 1    
+        print_dpart 0 6 $4 
+    ;;                
+    0)                
+        print_dpart 0 6 $4 
+        tput cud 1    
+        print_dpart 0 2 $4 
+        print_dpart 4 6 $4 
+        tput cud 1    
+        print_dpart 0 2 $4 
+        print_dpart 4 6 $4 
+        tput cud 1    
+        print_dpart 0 2 $4 
+        print_dpart 4 6 $4 
+        tput cud 1    
+        print_dpart 0 6 $4 
+        ;;
     esac
 }
-
 bat_status () { 
     previous_bat=$bat
     previous_charge=$charging
 
     bat=$(cat "$bat_number/capacity")
-    let blocks=$bat/3*3
+    blocks=$(($bat/3*3))
+    fill_cols=$((bat/3+4))
 
     status=$(cat "$bat_number/status")
     if [[ $status == "Discharging" ]] || [[ $status == "Not charging" ]]; then
@@ -353,15 +308,24 @@ print_number () {
         return 0
     fi
     if [[ $bat == 100 ]]; then
-        print_digit 1 $(($newl+2)) $(($indent+8))
-        print_digit 0 $(($newl+2)) $(($indent+16))
-        print_digit 0 $(($newl+2)) $(($indent+24))
+        print_digit 1 $(($newl+2)) $(($indent+8))  100
+        print_digit 0 $(($newl+2)) $(($indent+16)) 100
+        print_digit 0 $(($newl+2)) $(($indent+24)) 100
     else 
         if (( $bat < 10 )); then
-            print_digit $bat $(($newl+2)) $(($indent+16))
+            print_digit $bat $(($newl+2)) $(($indent+16)) 0
         else 
-            print_digit ${bat:0:1} $(($newl+2)) $(($indent+12))
-            print_digit ${bat:1} $(($newl+2)) $(($indent+20))
+            block1=0
+            block2=0
+            if (( $fill_cols > 12 )); then
+                block1=$(($fill_cols-12))
+                if (( $fill_cols > 20 )); then
+                    block2=$(($fill_cols-20))
+                fi
+            fi
+
+            print_digit ${bat:0:1} $(($newl+2)) $(($indent+12)) $block1
+            print_digit ${bat:1} $(($newl+2)) $(($indent+20)) $block2
         fi
     fi
 }
@@ -383,7 +347,7 @@ printfat () {
     if [ $charging -eq 1 ]; then	
         printf "          ${charge_color}████████"
     else
-        printf "               "
+        printf "                  "
     fi
 
 
@@ -393,7 +357,7 @@ printfat () {
     if [ $charging -eq 1 ]; then	
         printf "       ${charge_color}████████"
     else
-        printf "            "
+        printf "               "
     fi
     
     tput cup $(($newl+5)) $indent
@@ -477,7 +441,7 @@ big_loop () {
 }
 
 smallpiece() {
-let blocks=$bat/7*7
+blocks=$(($bat/7*7))
 i=0
 
 printf "${shell_color}██"

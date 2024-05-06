@@ -29,13 +29,20 @@ For a small inline battery (also works with `-l` and might not print properly in
 ```
 battery -s
 ```
+If you want a slightly thicker battery:
+```
+battery -f
 
+```
+To print the current battery as a number inside the pictue (doesn't work with `-s`):
+```
+battery -d
+```
 For minimalistic text output:
 ```
 battery -m
 ```
 The `-m` flag overwrites flags above.
-
 
 If you want to change the colors, modify the top of the script using ANSI escape codes (`\033[38;2;R;G;Bm` format for terminals with true color support).
 
@@ -43,7 +50,6 @@ To remove colors:
 ```
 battery -n
 ```
-
 To specify the battery:
 ```
 battery -b BAT_NUMBER
