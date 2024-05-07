@@ -4,7 +4,11 @@
 
 ![image](screenshot.png "screenshot")
 ### Small version:
+
 ![image](screenshot_small.png "screenshot_small")
+### Version with some extra options:
+
+![image](screenshot_full.png "screenshot_full")
 
 ## Installation
 
@@ -45,6 +49,11 @@ battery -m
 The `-m` flag overwrites flags above.
 
 If you want to change the colors, modify the top of the script using ANSI escape codes (`\033[38;2;R;G;Bm` format for terminals with true color support).
+
+To use and alternate charging symbol (requires nerd fonts installed):
+```
+battery -c
+```
 
 To remove colors:
 ```
