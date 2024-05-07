@@ -13,10 +13,11 @@ minimal=false
 small=false
 digits=false
 fat=false
+altcharge=false
 
 bat_number="$(find /sys/class/power_supply -iname 'BAT*' | sort -g | head -n 1)"
 
-while getopts ":hnlmsdfb:" option; do
+while getopts ":hnlmcsdfb:" option; do
       case $option in
     n)
         colors=false
@@ -36,6 +37,9 @@ while getopts ":hnlmsdfb:" option; do
     f)
         fat=true
         ;;
+    c)
+        altcharge=true
+        ;;
     b)
         bat_number="/sys/class/power_supply/BAT$OPTARG"
         if [ ! -d $bat_number ]; then
@@ -53,7 +57,8 @@ while getopts ":hnlmsdfb:" option; do
         echo "  -f              Draws a slightly thicker battery" 
         echo "  -d              Prints the current battery as a number in the picture" 
         echo "  -m              Minimal print of the battery status" 
-        echo "  -n              Remove colors"
+        echo "  -c              Use alternate charging symbol (requires nerd fonts)"
+        echo "  -n              Disable colors"
         echo "  -b BAT_NUMBER   Specify battery number"
         exit 0
         ;;
@@ -340,6 +345,23 @@ print_number () {
 }
 
 printfat () {
+
+    top1=" "
+    top2=""
+    mid1="█"
+    mid2="█"
+    bot1=""
+    bot2=""
+
+    if [[ $altcharge == true ]]; then
+    top1=""
+    top2=""
+    mid1="█"
+    mid2=""
+    bot1=""
+    bot2=""
+    fi
+
     tput cup $newl $indent
     printf "${shell_color}████████████████████████████████████████\n"
 
@@ -352,9 +374,9 @@ printfat () {
 
     tput cup $(($newl+3)) $indent
     batpiece 1
-
-    if [ $charging -eq 1 ]; then	
-        printf "         ${charge_color}████████"
+    
+    if [ $charging -eq 1 ]; then
+        printf "      ${charge_color}$top1███████$top2"
     else
         printf "                 "
     fi
@@ -364,7 +386,7 @@ printfat () {
     batpiece 1
 
     if [ $charging -eq 1 ]; then	
-        printf "      ${charge_color}████████"
+        printf "       ${charge_color}$mid1█$mid2"
     else
         printf "              "
     fi
@@ -373,7 +395,7 @@ printfat () {
     batpiece 1
 
     if [ $charging -eq 1 ]; then	
-        printf "   ${charge_color}████████"
+        printf "   ${charge_color}$bot1███████$bot2"
     else
         printf "           "
     fi
@@ -392,6 +414,15 @@ printfat () {
 }
 
 printbat () {
+
+    end1="█"
+    end2="█"
+
+    if [[ $altcharge == true ]]; then
+    end1=""
+    end2=""
+    fi
+
     tput cup $newl $indent
     printf "${shell_color}████████████████████████████████████████\n"
 
@@ -406,7 +437,7 @@ printbat () {
     batpiece 1
 
     if [ $charging -eq 1 ]; then	
-        printf "       ${charge_color}████████"
+        printf "       ${charge_color}$end1██████$end2"
     else
         printf "               "
     fi
@@ -416,7 +447,7 @@ printbat () {
     batpiece 1
 
     if [ $charging -eq 1 ]; then	
-        printf "    ${charge_color}████████"
+        printf "    ${charge_color}$end1██████$end2"
     else
         printf "            "
     fi
@@ -510,6 +541,7 @@ main_loop() {
         $1 || clear
         big_loop
     fi
+    tput cup $newl $indent
 }
 
 battery_color=$NC
