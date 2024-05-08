@@ -397,7 +397,7 @@ printfat () {
     if [ $charging -eq 1 ]; then	
         printf "   ${charge_color}$bot1███████$bot2"
     else
-        printf "            "
+        printf "           "
     fi
 
     tput cup $(($newl+6)) $indent
@@ -505,7 +505,7 @@ fi
 }
 
 smallbat() {
-        echo ""
+        printf "\n"
         printf "${shell_color}███████████████████\n"
 
         smallpiece
@@ -541,7 +541,6 @@ main_loop() {
         $1 || clear
         big_loop
     fi
-    tput cup $newl $indent
 }
 
 battery_color=$NC
