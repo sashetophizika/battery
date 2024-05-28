@@ -42,10 +42,10 @@ To print the current battery as a number inside the picture and can be toggled b
 ```
 battery -d
 ```
-For minimalistic text output:
+For minimal text output:
 ```
 battery -m
-```
+``
 The `-m` flag overwrites flags above.
 
 If you want to change the colors, modify the top of the script using ANSI escape codes (`\033[38;2;R;G;Bm` format for terminals with true color support).

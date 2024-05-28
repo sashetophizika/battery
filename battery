@@ -13,7 +13,22 @@ minimal=false
 small=false
 digits=false
 fat=false
-altcharge=false
+alt_charge=false
+
+print_help () {
+    printf "Usage:
+  battery [-lsmbdfn]
+
+OPTIONS
+  -l              Monitor the battery live
+  -s              Use a small version of the battery instead
+  -f              Draws a slightly thicker battery
+  -d              Prints the current battery as a number in the picture
+  -m              Minimal print of the battery status
+  -c              Use alternate charging symbol (requires nerd fonts)
+  -n              Disable colors
+  -b BAT_NUMBER   Specify battery number"
+}
 
 bat_number="$(find /sys/class/power_supply -iname 'BAT*' | sort -g | head -n 1)"
 
@@ -38,7 +53,7 @@ while getopts ":hnlmcsdfb:" option; do
         fat=true
         ;;
     c)
-        altcharge=true
+        alt_charge=true
         ;;
     b)
         bat_number="/sys/class/power_supply/BAT$OPTARG"
@@ -48,25 +63,15 @@ while getopts ":hnlmcsdfb:" option; do
         fi
         ;;
     h)
-        echo "Usage:" 
-        echo "  battery [-lsmbdfn]"
-        echo " "
-        echo "OPTIONS"
-        echo "  -l              Monitor the battery live"
-        echo "  -s              Use a small version of the battery instead"
-        echo "  -f              Draws a slightly thicker battery" 
-        echo "  -d              Prints the current battery as a number in the picture" 
-        echo "  -m              Minimal print of the battery status" 
-        echo "  -c              Use alternate charging symbol (requires nerd fonts)"
-        echo "  -n              Disable colors"
-        echo "  -b BAT_NUMBER   Specify battery number"
+        print_help
         exit 0
         ;;
     esac
 done
 
-reset() {
-    tput reset
+reset () {
+    tput cnorm
+    clear
 }
 
 cnorm () {
@@ -90,14 +95,15 @@ if [[ $minimal == false ]] ; then
     fi
 fi
 
-quit? () {
-    read -sn 1 -t 0.1 quit 
-    if [ "$quit" = "q" ] || [ "$quit" = $'\e' ]; then 
+handle_event () {
+    read -sn 1 -t 0.1 key
+    if [ "$key" = "q" ] || [ "$key" = $'\e' ]; then 
         return 1
     else
-        if [[ $quit == "d" ]]; then
+        if [[ $key == "d" ]]; then
             if [[ $digits == true ]]; then
                 digits=false
+                redraw=0
             else
                 digits=true
             fi
@@ -121,7 +127,7 @@ core_color () {
     fi
 }
 
-print_dpart () {
+print_digit_part () {
     if (( $1 > 0 )); then
         tput cuf $1
     fi 
@@ -142,135 +148,136 @@ print_digit () {
     printf "$battery_color"
     case $1 in 
     1) 
-        print_dpart 0 4 $4
+        print_digit_part 0 4 $4
         tput cud 1    
-        print_dpart 2 4 $4
+        print_digit_part 2 4 $4
         tput cud 1    
-        print_dpart 2 4 $4
+        print_digit_part 2 4 $4
         tput cud 1    
-        print_dpart 2 4 $4
+        print_digit_part 2 4 $4
         tput cud 1    
-        print_dpart 0 6 $4
+        print_digit_part 0 6 $4
     ;;                
     2)                
-        print_dpart 0 6 $4 
+        print_digit_part 0 6 $4 
         tput cud 1    
-        print_dpart 4 6 $4 
+        print_digit_part 4 6 $4 
         tput cud 1    
-        print_dpart 0 6 $4
+        print_digit_part 0 6 $4
         tput cud 1    
-        print_dpart 0 2 $4 
+        print_digit_part 0 2 $4 
         tput cud 1    
-        print_dpart 0 6 $4 
+        print_digit_part 0 6 $4 
     ;;                
     3)                
-        print_dpart 0 6 $4 
+        print_digit_part 0 6 $4 
         tput cud 1    
-        print_dpart 4 6 $4 
+        print_digit_part 4 6 $4 
         tput cud 1    
-        print_dpart 0 6 $4
+        print_digit_part 0 6 $4
         tput cud 1    
-        print_dpart 4 6 $4 
+        print_digit_part 4 6 $4 
         tput cud 1    
-        print_dpart 0 6 $4 
+        print_digit_part 0 6 $4 
     ;;                
     4)                
-        print_dpart 0 2 $4 
-        print_dpart 4 6 $4 
+        print_digit_part 0 2 $4 
+        print_digit_part 4 6 $4 
         tput cud 1    
-        print_dpart 0 2 $4 
-        print_dpart 4 6 $4 
+        print_digit_part 0 2 $4 
+        print_digit_part 4 6 $4 
         tput cud 1    
-        print_dpart 0 6 $4
+        print_digit_part 0 6 $4
         tput cud 1    
-        print_dpart 4 6 $4 
+        print_digit_part 4 6 $4 
         tput cud 1    
-        print_dpart 4 6 $4 
+        print_digit_part 4 6 $4 
     ;;                
     5)                
-        print_dpart 0 6 $4 
+        print_digit_part 0 6 $4 
         tput cud 1    
-        print_dpart 0 2 $4 
+        print_digit_part 0 2 $4 
         tput cud 1    
-        print_dpart 0 6 $4
+        print_digit_part 0 6 $4
         tput cud 1    
-        print_dpart 4 6 $4 
+        print_digit_part 4 6 $4 
         tput cud 1    
-        print_dpart 0 6 $4 
+        print_digit_part 0 6 $4 
     ;;                
     6)                
-        print_dpart 0 6 $4 
+        print_digit_part 0 6 $4 
         tput cud 1    
-        print_dpart 0 2 $4 
+        print_digit_part 0 2 $4 
         tput cud 1    
-        print_dpart 0 6 $4
+        print_digit_part 0 6 $4
         tput cud 1    
-        print_dpart 0 2 $4 
-        print_dpart 4 6 $4 
+        print_digit_part 0 2 $4 
+        print_digit_part 4 6 $4 
         tput cud 1    
-        print_dpart 0 6 $4 
+        print_digit_part 0 6 $4 
     ;;                
     7)                
-        print_dpart 0 6 $4 
+        print_digit_part 0 6 $4 
         tput cud 1    
-        print_dpart 4 6 $4 
+        print_digit_part 4 6 $4 
         tput cud 1    
-        print_dpart 4 6 $4
+        print_digit_part 4 6 $4
         tput cud 1    
-        print_dpart 4 6 $4 
+        print_digit_part 4 6 $4 
         tput cud 1    
-        print_dpart 4 6 $4 
+        print_digit_part 4 6 $4 
     ;;                
     8)                
-        print_dpart 0 6 $4 
+        print_digit_part 0 6 $4 
         tput cud 1    
-        print_dpart 0 2 $4 
-        print_dpart 4 6 $4 
+        print_digit_part 0 2 $4 
+        print_digit_part 4 6 $4 
         tput cud 1    
-        print_dpart 0 6 $4
+        print_digit_part 0 6 $4
         tput cud 1    
-        print_dpart 0 2 $4 
-        print_dpart 4 6 $4 
+        print_digit_part 0 2 $4 
+        print_digit_part 4 6 $4 
         tput cud 1    
-        print_dpart 0 6 $4 
+        print_digit_part 0 6 $4 
     ;;                
     9)                
-        print_dpart 0 6 $4 
+        print_digit_part 0 6 $4 
         tput cud 1    
-        print_dpart 0 2 $4 
-        print_dpart 4 6 $4 
+        print_digit_part 0 2 $4 
+        print_digit_part 4 6 $4 
         tput cud 1    
-        print_dpart 0 6 $4
+        print_digit_part 0 6 $4
         tput cud 1    
-        print_dpart 4 6 $4 
+        print_digit_part 4 6 $4 
         tput cud 1    
-        print_dpart 0 6 $4 
+        print_digit_part 0 6 $4 
     ;;                
     0)                
-        print_dpart 0 6 $4 
+        print_digit_part 0 6 $4 
         tput cud 1    
-        print_dpart 0 2 $4 
-        print_dpart 4 6 $4 
+        print_digit_part 0 2 $4 
+        print_digit_part 4 6 $4 
         tput cud 1    
-        print_dpart 0 2 $4 
-        print_dpart 4 6 $4 
+        print_digit_part 0 2 $4 
+        print_digit_part 4 6 $4 
         tput cud 1    
-        print_dpart 0 2 $4 
-        print_dpart 4 6 $4 
+        print_digit_part 0 2 $4 
+        print_digit_part 4 6 $4 
         tput cud 1    
-        print_dpart 0 6 $4 
+        print_digit_part 0 6 $4 
         ;;
     esac
 }
+
 bat_status () { 
     previous_bat=$bat
     previous_charge=$charging
 
-    bat=$(cat "$bat_number/capacity")
-    blocks=$(($bat/3*3))
+    bat=$(cat ~/testbat/capacity)
+    blocks=$(($bat/3))
     fill_cols=$((bat/3+4))
 
-    status=$(cat "$bat_number/status")
+    status=$(cat $bat_number/status)
     if [[ $status == "Discharging" ]] || [[ $status == "Not charging" ]]; then
         charging=0
     else
@@ -290,7 +297,7 @@ if [[ $minimal == true ]]; then
     exit 0
 fi
 
-batpiece () {
+print_bat_row () {
 i=0
 
 printf "${shell_color}██"
@@ -299,14 +306,14 @@ if [[ $blocks == 0 ]]; then
     printf "                                  "
 
 else
-    while [ $i -le 100 ]; do
+    while [ $i -le 33 ]; do
         if [ $i -le $blocks ]; then
             printf "${battery_color}█"
         else
             printf " "
         fi
 
-        ((i+=3))
+        ((i+=1))
     done
 
 fi
@@ -317,10 +324,12 @@ else
     printf "${shell_color}████████"
 fi
 }
+
 print_number () {
     if [[ $digits == false ]]; then
         return 0
     fi
+
     if [[ $bat == 100 ]]; then
         print_digit 1 $(($newl+2)) $(($indent+8))  100
         print_digit 0 $(($newl+2)) $(($indent+16)) 100
@@ -344,124 +353,130 @@ print_number () {
     fi
 }
 
-printfat () {
+print_charge () {
+    if [[ $fat == true ]]; then
+        top1=" "
+        top2=""
+        mid1="█"
+        mid2="█"
+        bot1=""
+        bot2=""
 
-    top1=" "
-    top2=""
-    mid1="█"
-    mid2="█"
-    bot1=""
-    bot2=""
+        if [[ $alt_charge == true ]]; then
+        top1=""
+        top2=""
+        mid1="█"
+        mid2=""
+        bot1=""
+        bot2=""
+        fi
 
-    if [[ $altcharge == true ]]; then
-    top1=""
-    top2=""
-    mid1="█"
-    mid2=""
-    bot1=""
-    bot2=""
-    fi
-
-    tput cup $newl $indent
-    printf "${shell_color}████████████████████████████████████████\n"
-
-    tput cup $(($newl+1)) $indent
-    batpiece 0
-
-    tput cup $(($newl+2)) $indent
-    batpiece 1
+        tput cup $(($newl+3)) $(($indent+44))
+        if [ $charging -eq 1 ]; then
+            printf "      ${charge_color}$top1███████$top2"
+        else
+            printf "                 "
+        fi
 
 
-    tput cup $(($newl+3)) $indent
-    batpiece 1
-    
-    if [ $charging -eq 1 ]; then
-        printf "      ${charge_color}$top1███████$top2"
+        tput cup $(($newl+4)) $(($indent+44))
+        if [ $charging -eq 1 ]; then	
+            printf "       ${charge_color}$mid1█$mid2"
+        else
+            printf "              "
+        fi
+        
+
+        tput cup $(($newl+5)) $(($indent+44))
+        if [ $charging -eq 1 ]; then	
+            printf "   ${charge_color}$bot1███████$bot2"
+        else
+            printf "            "
+        fi
+
     else
-        printf "                 "
+        end1="█"
+        end2="█"
+
+        if [[ $alt_charge == true ]]; then
+        end1=""
+        end2=""
+        fi
+
+        tput cup $(($newl+3)) $(($indent+44))
+        if [ $charging -eq 1 ]; then	
+            printf "       ${charge_color}$end1██████$end2"
+        else
+            printf "               "
+        fi
+
+        tput cup $(($newl+4)) $(($indent+44))
+        if [ $charging -eq 1 ]; then	
+            printf "    ${charge_color}$end1██████$end2"
+        else
+            printf "            "
+        fi
     fi
-
-
-    tput cup $(($newl+4)) $indent
-    batpiece 1
-
-    if [ $charging -eq 1 ]; then	
-        printf "       ${charge_color}$mid1█$mid2"
-    else
-        printf "              "
-    fi
-    
-    tput cup $(($newl+5)) $indent
-    batpiece 1
-
-    if [ $charging -eq 1 ]; then	
-        printf "   ${charge_color}$bot1███████$bot2"
-    else
-        printf "            "
-    fi
-
-    tput cup $(($newl+6)) $indent
-    batpiece 1
-
-
-    tput cup $(($newl+7)) $indent
-    batpiece 0
-
-    tput cup $(($newl+8)) $indent
-    printf "${shell_color}████████████████████████████████████████\n"
-
-    print_number
 }
 
-printbat () {
+redraw=0
+blocks=0
+old_blocks=$blocks
+old_index=$(($indent+$blocks))
 
-    end1="█"
-    end2="█"
-
-    if [[ $altcharge == true ]]; then
-    end1=""
-    end2=""
-    fi
-
-    tput cup $newl $indent
-    printf "${shell_color}████████████████████████████████████████\n"
-
-    tput cup $(($newl+1)) $indent
-    batpiece 0
-
-    tput cup $(($newl+2)) $indent
-    batpiece 1
-
-
-    tput cup $(($newl+3)) $indent
-    batpiece 1
-
-    if [ $charging -eq 1 ]; then	
-        printf "       ${charge_color}$end1██████$end2"
+change_column () {
+    index=$(($indent+$blocks+2))
+    if [[ $index > $old_index ]]; then
+        old_index=$index
+        new_sym="█"
     else
-        printf "               "
+        old_index=$index
+        index=$(($index+1))
+        new_sym=" "
     fi
 
+    tput cup $(($newl+1)) $index
+    for i in $(seq 0 $1); do
+        printf "${battery_color}$new_sym"
+        tput cud 1
+        tput cub 1
+    done
+}
 
-    tput cup $(($newl+4)) $indent
-    batpiece 1
-
-    if [ $charging -eq 1 ]; then	
-        printf "    ${charge_color}$end1██████$end2"
+print_bat () {
+    if [[ $fat == true ]]; then
+        core_rows=6
     else
-        printf "            "
+        core_rows=5
     fi
-    
-    tput cup $(($newl+5)) $indent
-    batpiece 1
 
-    tput cup $(($newl+6)) $indent
-    batpiece 0
+    if [[ $redraw == 0 ]]; then
+        tput cup $newl $indent
+        printf "${shell_color}████████████████████████████████████████\n"
 
-    tput cup $(($newl+7)) $indent
-    printf "${shell_color}████████████████████████████████████████\n"
+        tput cup $(($newl+1)) $indent
+        print_bat_row 0
 
-    print_number
+        for i in $(seq 2 $core_rows); do
+            tput cup $(($newl+$i)) $indent
+            print_bat_row 1
+        done
+
+        tput cup $(($newl+6)) $indent
+        print_bat_row 0
+
+        tput cup $(($newl+7)) $indent
+        printf "${shell_color}████████████████████████████████████████\n"
+
+        redraw=1
+    else
+        if [[ $blocks == $old_blocks ]]; then
+            return 0
+        else
+            change_column $core_rows
+        fi
+        old_blocks=$blocks
+    fi
 }
 
 big_loop () {
@@ -473,72 +488,63 @@ big_loop () {
     let cols=$cols indent=cols/2-25
 
     core_color
-    if [[ $fat == true ]]; then
-        printfat
+    print_bat
+    print_charge
+    print_number
+}
+
+small_bat_row () {
+    blocks=$(($bat/7))
+    i=0
+
+    printf "${shell_color}██"
+        while [ $i -le 14 ]; do
+            if [ $i -le $blocks ]; then
+                printf "${battery_color}█"
+            else
+                printf " "
+            fi
+
+            ((i+=1))
+        done
+            printf "${shell_color}███▊"
+}
+
+small_bat () {
+    printf "\n"
+    printf "${shell_color}███████████████████\n"
+
+    small_bat_row
+
+    if [ $charging -eq 1 ]; then	
+        printf "   ${charge_color}▄▄▄\n"
     else
-        printbat
+        printf "               \n"
     fi
+
+    small_bat_row
+
+    if [ $charging -eq 1 ]; then	
+        printf "  ${charge_color}▀▀▀\n"
+    else
+        printf "            \n"
+    fi
+
+    printf "${shell_color}███████████████████\n"
 }
 
-smallpiece() {
-blocks=$(($bat/7*7))
-i=0
-
-printf "${shell_color}██"
-
-if [[ $blocks == 0 ]]; then 
-    printf "               ${shell_color}███▊"
-else
-    while [ $i -le 100 ]; do
-        if [ $i -le $blocks ]; then
-            printf "${battery_color}█"
-        else
-            printf " "
-        fi
-
-        ((i+=7))
-    done
-
-        printf "${shell_color}███▊"
-fi
-
+small_loop () {
+    bat_status
+    core_color
+    small_bat
 }
 
-smallbat() {
-        printf "\n"
-        printf "${shell_color}███████████████████\n"
-
-        smallpiece
-
-        if [ $charging -eq 1 ]; then	
-            printf "   ${charge_color}▄▄▄\n"
-        else
-            printf "               \n"
-        fi
-
-        smallpiece
-
-        if [ $charging -eq 1 ]; then	
-            printf "  ${charge_color}▀▀▀\n"
-        else
-            printf "            \n"
-        fi
-
-        printf "${shell_color}███████████████████\n"
-}
-
-small_loop() {
-        bat_status
-        core_color
-        smallbat
-}
-
-main_loop() {
+main_loop () {
     if [[ $small == true ]]; then
         small_loop
         tput cuu 5
     else
-        $1 || clear
+        [[ $1 == "clear" ]] || clear
         big_loop
     fi
 }
@@ -569,6 +575,7 @@ if [[ $live == false ]]; then
 else
     while [ 0 ]; do
         if [[ $(tput lines) != "$rows" ]] || [[ $(tput cols) != "$cols" ]]; then
+            redraw=0
             main_loop "clear"
         fi
 
@@ -576,7 +583,7 @@ else
             main_loop 
         fi
 
-        quit? || break
+        handle_event || break
         bat_status
     done
 fi
