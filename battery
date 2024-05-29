@@ -113,6 +113,13 @@ handle_event () {
     return 0
 }
 
+redraw=0
+blocks=0
+old_color=$battery_color
+old_num_length=${#bat}
+old_blocks=$blocks
+old_index=$(($indent+$blocks))
+
 core_color () {
     if [[ $colors == true ]]; then 
         battery_color=$color100p
@@ -124,147 +131,161 @@ core_color () {
         if [ $bat -lt 20 ]; then
             battery_color=$color20p
         fi
+
+        if [[ "$battery_color" != "$old_color" ]]; then
+            redraw=0
+        fi
+        old_color=$battery_color
+    fi
+}
+
+check_digit_length_change () {
+    if [[ $digits == true ]]; then
+        if [[ "$old_num_length" != "${#bat}" ]]; then
+            redraw=0
+        fi
+        old_num_length=${#bat}
     fi
 }
 
 print_digit_part () {
-    if (( $1 > 0 )); then
-        tput cuf $1
-    fi 
-
-    for i in $(seq $(($1+1)) $2); do
-        if (( $i < $3 )); then
-            printf " "
+    for i in $(seq 0 5); do
+        if (( $i < $2 )); then
+            if [[ "${1:$i:1}" == "1" ]]; then
+                printf " "
+            else
+                printf "█"
+            fi
         else
-            printf "█"
+            if [[ "${1:$i:1}" == "1" ]]; then
+                printf "█"
+            else
+                printf " "
+            fi
         fi
     done
-    tput cub $2
+    tput cub 6
 }
 
 print_digit () {
     tput cup $2 $3
     core_color
+    if [[ $old_num_length != ${#bat} ]]; then
+        redraw=0
+    fi
+    old_num_length=${#bat}
+
     printf "$battery_color"
     case $1 in 
     1) 
-        print_digit_part 0 4 $4
+        print_digit_part "111100" $4
         tput cud 1    
-        print_digit_part 2 4 $4
+        print_digit_part "001100" $4
         tput cud 1    
-        print_digit_part 2 4 $4
+        print_digit_part "001100" $4
         tput cud 1    
-        print_digit_part 2 4 $4
+        print_digit_part "001100" $4
         tput cud 1    
-        print_digit_part 0 6 $4
+        print_digit_part "111111" $4
     ;;                
     2)                
-        print_digit_part 0 6 $4 
+        print_digit_part "111111" $4 
         tput cud 1    
-        print_digit_part 4 6 $4 
+        print_digit_part "000011" $4 
         tput cud 1    
-        print_digit_part 0 6 $4
+        print_digit_part "111111" $4 
         tput cud 1    
-        print_digit_part 0 2 $4 
+        print_digit_part "110000" $4 
         tput cud 1    
-        print_digit_part 0 6 $4 
+        print_digit_part "111111" $4 
     ;;                
     3)                
-        print_digit_part 0 6 $4 
+        print_digit_part "111111" $4 
         tput cud 1    
-        print_digit_part 4 6 $4 
+        print_digit_part "000011" $4 
         tput cud 1    
-        print_digit_part 0 6 $4
+        print_digit_part "111111" $4 
         tput cud 1    
-        print_digit_part 4 6 $4 
+        print_digit_part "000011" $4 
         tput cud 1    
-        print_digit_part 0 6 $4 
+        print_digit_part "111111" $4 
     ;;                
     4)                
-        print_digit_part 0 2 $4 
-        print_digit_part 4 6 $4 
+        print_digit_part "110011" $4 
         tput cud 1    
-        print_digit_part 0 2 $4 
-        print_digit_part 4 6 $4 
+        print_digit_part "110011" $4 
         tput cud 1    
-        print_digit_part 0 6 $4
+        print_digit_part "111111" $4 
         tput cud 1    
-        print_digit_part 4 6 $4 
+        print_digit_part "000011" $4 
         tput cud 1    
-        print_digit_part 4 6 $4 
+        print_digit_part "000011" $4 
     ;;                
     5)                
-        print_digit_part 0 6 $4 
+        print_digit_part "111111" $4 
         tput cud 1    
-        print_digit_part 0 2 $4 
+        print_digit_part "110000" $4 
         tput cud 1    
-        print_digit_part 0 6 $4
+        print_digit_part "111111" $4 
         tput cud 1    
-        print_digit_part 4 6 $4 
+        print_digit_part "000011" $4 
         tput cud 1    
-        print_digit_part 0 6 $4 
+        print_digit_part "111111" $4 
     ;;                
     6)                
-        print_digit_part 0 6 $4 
+        print_digit_part "111111" $4 
         tput cud 1    
-        print_digit_part 0 2 $4 
+        print_digit_part "110000" $4 
         tput cud 1    
-        print_digit_part 0 6 $4
+        print_digit_part "111111" $4 
         tput cud 1    
-        print_digit_part 0 2 $4 
-        print_digit_part 4 6 $4 
+        print_digit_part "110011" $4 
         tput cud 1    
-        print_digit_part 0 6 $4 
+        print_digit_part "111111" $4 
     ;;                
     7)                
-        print_digit_part 0 6 $4 
+        print_digit_part "111111" $4 
         tput cud 1    
-        print_digit_part 4 6 $4 
+        print_digit_part "000011" $4 
         tput cud 1    
-        print_digit_part 4 6 $4
+        print_digit_part "000011" $4 
         tput cud 1    
-        print_digit_part 4 6 $4 
+        print_digit_part "000011" $4 
         tput cud 1    
-        print_digit_part 4 6 $4 
+        print_digit_part "000011" $4 
     ;;                
     8)                
-        print_digit_part 0 6 $4 
+        print_digit_part "111111" $4 
         tput cud 1    
-        print_digit_part 0 2 $4 
-        print_digit_part 4 6 $4 
+        print_digit_part "110011" $4 
         tput cud 1    
-        print_digit_part 0 6 $4
+        print_digit_part "111111" $4 
         tput cud 1    
-        print_digit_part 0 2 $4 
-        print_digit_part 4 6 $4 
+        print_digit_part "110011" $4 
         tput cud 1    
-        print_digit_part 0 6 $4 
+        print_digit_part "111111" $4 
     ;;                
     9)                
-        print_digit_part 0 6 $4 
+        print_digit_part "111111" $4 
         tput cud 1    
-        print_digit_part 0 2 $4 
-        print_digit_part 4 6 $4 
+        print_digit_part "110011" $4 
         tput cud 1    
-        print_digit_part 0 6 $4
+        print_digit_part "111111" $4 
         tput cud 1    
-        print_digit_part 4 6 $4 
+        print_digit_part "000011" $4 
         tput cud 1    
-        print_digit_part 0 6 $4 
+        print_digit_part "111111" $4 
     ;;                
     0)                
-        print_digit_part 0 6 $4 
+        print_digit_part "111111" $4 
         tput cud 1    
-        print_digit_part 0 2 $4 
-        print_digit_part 4 6 $4 
+        print_digit_part "110011" $4 
         tput cud 1    
-        print_digit_part 0 2 $4 
-        print_digit_part 4 6 $4 
+        print_digit_part "110011" $4 
         tput cud 1    
-        print_digit_part 0 2 $4 
-        print_digit_part 4 6 $4 
+        print_digit_part "110011" $4 
         tput cud 1    
-        print_digit_part 0 6 $4 
+        print_digit_part "111111" $4 
         ;;
     esac
 }
@@ -285,7 +306,6 @@ bat_status () {
     fi
 }
 
-
 if [[ $minimal == true ]]; then
     bat_status
     echo "Battery: $bat%"
@@ -302,21 +322,15 @@ i=0
 
 printf "${shell_color}██"
 
-if [[ $blocks == 0 ]]; then
-    printf "                                  "
+while [ $i -le 33 ]; do
+    if [ $i -le $blocks ]; then
+        printf "${battery_color}█"
+    else
+        printf " "
+    fi
 
-else
-    while [ $i -le 33 ]; do
-        if [ $i -le $blocks ]; then
-            printf "${battery_color}█"
-        else
-            printf " "
-        fi
-
-        ((i+=1))
-    done
-
-fi
+    ((i+=1))
+done
 
 if [ $1 -eq 0 ]; then
     printf "${shell_color}████"
@@ -330,14 +344,11 @@ print_number () {
         return 0
     fi
 
-    if [[ $bat == 100 ]]; then
-        print_digit 1 $(($newl+2)) $(($indent+8))  100
-        print_digit 0 $(($newl+2)) $(($indent+16)) 100
-        print_digit 0 $(($newl+2)) $(($indent+24)) 100
-    else 
-        if (( $bat < 10 )); then
+    case $old_num_length in 
+        1) 
             print_digit $bat $(($newl+2)) $(($indent+16)) 0
-        else 
+        ;;
+        2)
             block1=0
             block2=0
             if (( $fill_cols > 12 )); then
@@ -349,8 +360,13 @@ print_number () {
 
             print_digit ${bat:0:1} $(($newl+2)) $(($indent+12)) $block1
             print_digit ${bat:1} $(($newl+2)) $(($indent+20)) $block2
-        fi
-    fi
+        ;;
+        3)
+            print_digit 1 $(($newl+2)) $(($indent+8))  100
+            print_digit 0 $(($newl+2)) $(($indent+16)) 100
+            print_digit 0 $(($newl+2)) $(($indent+24)) 100
+        ;;
+    esac
 }
 
 print_charge () {
@@ -419,11 +435,6 @@ print_charge () {
     fi
 }
 
-redraw=0
-blocks=0
-old_blocks=$blocks
-old_index=$(($indent+$blocks))
-
 change_column () {
     index=$(($indent+$blocks+2))
     if [[ $index > $old_index ]]; then
@@ -436,8 +447,10 @@ change_column () {
     fi
 
     tput cup $(($newl+1)) $index
+    printf "$battery_color"
+
     for i in $(seq 0 $1); do
-        printf "${battery_color}$new_sym"
+        printf "$new_sym"
         tput cud 1
         tput cub 1
     done
@@ -462,10 +475,10 @@ print_bat () {
             print_bat_row 1
         done
 
-        tput cup $(($newl+6)) $indent
+        tput cup $(($newl+$core_rows+1)) $indent
         print_bat_row 0
 
-        tput cup $(($newl+7)) $indent
+        tput cup $(($newl+$core_rows+2)) $indent
         printf "${shell_color}████████████████████████████████████████\n"
 
         redraw=1
@@ -488,6 +501,8 @@ big_loop () {
     let cols=$cols indent=cols/2-25
 
     core_color
+    check_digit_length_change
+
     print_bat
     print_charge
     print_number
@@ -544,7 +559,7 @@ main_loop () {
         small_loop
         tput cuu 5
     else
-        [[ $1 == "clear" ]] || clear
+        $1 || clear
         big_loop
     fi
 }
