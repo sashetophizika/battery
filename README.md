@@ -21,45 +21,40 @@ sudo cp battery/battery /usr/bin # system installation
 
 ## Usage
 
-Basic:
+### Basic:
 ```
 battery
 ```
-To stay and monitor live (`q` or `Ecs` to exit):
-```
-battery -l
-```
-For a small inline battery (also works with `-l` and might not print properly in a `tty`):
-```
-battery -s
-```
-If you want a slightly thicker battery:
-```
-battery -f
-```
-To print the current battery as a number inside the picture and can be toggled by pressing `d` in live mode (doesn't work with `-s`):
-```
-battery -d
-```
-For minimal text output:
-```
-battery -m
-```
-The `-m` flag overwrites flags above.
+### Options
 
-If you want to change the colors, modify the top of the script using ANSI escape codes (`\033[38;2;R;G;Bm` format for terminals with true color support).
+* **-l**: monitor the battery live (close with `q` or `Esc`)
+* **-s**: print a small inline battery instead
+* **-f**: print a slightly thicker battery
+* **-d**: print the current capacity as a number inside of the battery (does not work with -s)
+* **-m**: print minimal text output
+* **-c**: use an alternate charging symbol (requires nerd fonts)
+* **-n**: remove colors
+* **-b=(bat_number)**: specify the battery number (default is the lowest one)
 
-To use and alternate charging symbol (requires nerd fonts installed):
-```
-battery -c
+## Configuration
+
+You can create `~/.config/battery/battery.conf` in order to change the colors and the default flags (the flags then become toggles that do the opposite).
+
+### Default configuration:
+
+```bash
+color100p="\033[0;32m" #core color between 60-100%
+color60p="\033[0;33m" #core color between 20-60%
+color20p="\033[0;31m" #core color between 0-20%
+color_shell="\033[0m" #color of the outer shell
+color_charge="\033[0;36m" #color of the charging symbol
+
+colors=true 
+live=false 
+minimal=false
+small=false
+digits=false
+fat=false
+alt_charge=false
 ```
 
-To remove colors:
-```
-battery -n
-```
-To specify the battery:
-```
-battery -b BAT_NUMBER
-```
-The default is the one with the smallest number found in `/sys/class/power_supply/` (usually 0, equivalent to `-b 0`).
