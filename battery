@@ -139,7 +139,7 @@ bat_status () {
     previous_bat=$bat
     previous_charge=$charging
 
-    bat=$(cat ~/testbat/capacity)
+    bat=$(cat $bat_number/capacity)
     blocks=$(($bat/3))
     fill_cols=$((bat/3+4))
 
