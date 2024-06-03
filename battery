@@ -139,7 +139,7 @@ bat_status () {
     previous_bat=$bat
     previous_charge=$charging
 
-    bat=$(cat $bat_number/capacity)
+    bat=$(cat ~/testbat/capacity)
     blocks=$(($bat/3))
     fill_cols=$((bat/3+4))
 
@@ -291,9 +291,9 @@ print_number () {
             blocks1=0
             blocks2=0
             if (( $fill_cols > 12 )); then
-                blocks1=$(($fill_cols-12))
+                blocks1=$(($fill_cols-13))
                 if (( $fill_cols > 20 )); then
-                    blocks2=$(($fill_cols-20))
+                    blocks2=$(($fill_cols-21))
                 fi
             fi
 
