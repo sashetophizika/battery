@@ -179,9 +179,9 @@ check_number_length_change () {
     fi
 }
 
-print_digit_part () {
-    for i in $(seq 0 5); do
-        if (( $i < $2 )); then
+print_digit_parts () {
+    for i in $(seq 0 29); do
+        if (( $i % 6 < $2 )); then
             if [[ "${1:$i:1}" == "1" ]]; then
                 printf " "
             else
@@ -194,10 +194,12 @@ print_digit_part () {
                 printf " "
             fi
         fi
-    done
 
-    tput cub 6
-    tput cud 1    
+        if (( $i % 6 == 5 )); then
+            tput cub 6
+            tput cud 1    
+        fi
+    done
 }
 
 print_digit () {
@@ -206,74 +208,34 @@ print_digit () {
 
     case $1 in 
     0)                
-        print_digit_part "111111" $4 
-        print_digit_part "110011" $4 
-        print_digit_part "110011" $4 
-        print_digit_part "110011" $4 
-        print_digit_part "111111" $4 
+        print_digit_parts "111111110011110011110011111111" $4 
         ;;
     1) 
-        print_digit_part "111100" $4
-        print_digit_part "001100" $4
-        print_digit_part "001100" $4
-        print_digit_part "001100" $4
-        print_digit_part "111111" $4
+        print_digit_parts "111100001100001100001100111111" $4
     ;;                
     2)                
-        print_digit_part "111111" $4 
-        print_digit_part "000011" $4 
-        print_digit_part "111111" $4 
-        print_digit_part "110000" $4 
-        print_digit_part "111111" $4 
+        print_digit_parts "111111000011111111110000111111" $4 
     ;;                
     3)                
-        print_digit_part "111111" $4 
-        print_digit_part "000011" $4 
-        print_digit_part "111111" $4 
-        print_digit_part "000011" $4 
-        print_digit_part "111111" $4 
+        print_digit_parts "111111000011111111000011111111" $4 
     ;;                
     4)                
-        print_digit_part "110011" $4 
-        print_digit_part "110011" $4 
-        print_digit_part "111111" $4 
-        print_digit_part "000011" $4 
-        print_digit_part "000011" $4 
+        print_digit_parts "110011110011111111000011000011" $4 
     ;;                
     5)                
-        print_digit_part "111111" $4 
-        print_digit_part "110000" $4 
-        print_digit_part "111111" $4 
-        print_digit_part "000011" $4 
-        print_digit_part "111111" $4 
+        print_digit_parts "111111110000111111000011111111" $4 
     ;;                
     6)                
-        print_digit_part "111111" $4 
-        print_digit_part "110000" $4 
-        print_digit_part "111111" $4 
-        print_digit_part "110011" $4 
-        print_digit_part "111111" $4 
+        print_digit_parts "111111110000111111110011111111" $4 
     ;;                
     7)                
-        print_digit_part "111111" $4 
-        print_digit_part "000011" $4 
-        print_digit_part "000011" $4 
-        print_digit_part "000011" $4 
-        print_digit_part "000011" $4 
+        print_digit_parts "111111000011000011000011000011" $4 
     ;;                
     8)                
-        print_digit_part "111111" $4 
-        print_digit_part "110011" $4 
-        print_digit_part "111111" $4 
-        print_digit_part "110011" $4 
-        print_digit_part "111111" $4 
+        print_digit_parts "111111110011111111110011111111" $4 
     ;;                
     9)                
-        print_digit_part "111111" $4 
-        print_digit_part "110011" $4 
-        print_digit_part "111111" $4 
-        print_digit_part "000011" $4 
-        print_digit_part "111111" $4 
+        print_digit_parts "111111110011111111000011111111" $4 
     ;;                
     esac
 }
