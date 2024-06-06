@@ -124,6 +124,10 @@ handle_event () {
             fi
             main_loop
         ;;
+        "r")
+            redraw=0
+            main_loop
+        ;;
     esac
     return 0
 }
@@ -180,62 +184,61 @@ check_number_length_change () {
 }
 
 print_digit_parts () {
+    num="$battery_color\033[$2;$3H"
+
     for i in $(seq 0 29); do
-        if (( $i % 6 < $2 )); then
+        if (( $i % 6 < $4 )); then
             if [[ "${1:$i:1}" == "1" ]]; then
-                printf " "
+                num+=" "
             else
-                printf "█"
+                num+="█"
             fi
         else
             if [[ "${1:$i:1}" == "1" ]]; then
-                printf "█"
+                num+="█"
             else
-                printf " "
+                num+=" "
             fi
         fi
 
         if (( $i % 6 == 5 )); then
-            tput cub 6
-            tput cud 1    
+            num+="\033[$(($2 + ($i+1) / 6));$3H"
         fi
     done
+    printf "$num"
 }
 
 print_digit () {
-    tput cup $2 $3
-    printf "$battery_color"
-
     case $1 in 
     0)                
-        print_digit_parts "111111110011110011110011111111" $4 
+        print_digit_parts "111111110011110011110011111111" $2 $3 $4 
         ;;
     1) 
-        print_digit_parts "111100001100001100001100111111" $4
+        print_digit_parts "111100001100001100001100111111" $2 $3 $4
     ;;                
     2)                
-        print_digit_parts "111111000011111111110000111111" $4 
+        print_digit_parts "111111000011111111110000111111" $2 $3 $4 
     ;;                
     3)                
-        print_digit_parts "111111000011111111000011111111" $4 
+        print_digit_parts "111111000011111111000011111111" $2 $3 $4 
     ;;                
     4)                
-        print_digit_parts "110011110011111111000011000011" $4 
+        print_digit_parts "110011110011111111000011000011" $2 $3 $4 
     ;;                
     5)                
-        print_digit_parts "111111110000111111000011111111" $4 
+        print_digit_parts "111111110000111111000011111111" $2 $3 $4 
     ;;                
     6)                
-        print_digit_parts "111111110000111111110011111111" $4 
+        print_digit_parts "111111110000111111110011111111" $2 $3 $4 
     ;;                
     7)                
-        print_digit_parts "111111000011000011000011000011" $4 
+        print_digit_parts "111111000011000011000011000011" $2 $3 $4 
     ;;                
     8)                
-        print_digit_parts "111111110011111111110011111111" $4 
+        print_digit_parts "111111110011111111110011111111" $2 $3 $4 
     ;;                
     9)                
-        print_digit_parts "111111110011111111000011111111" $4 
+        print_digit_parts "111111110011111111000011111111" $2 $3 $4 
     ;;                
     esac
 }
@@ -259,15 +262,17 @@ print_number () {
                 fi
             fi
 
-            print_digit ${bat:0:1} $(($newl+2)) $(($indent+12)) $blocks1
-            print_digit ${bat:1} $(($newl+2)) $(($indent+20)) $blocks2
+            print_digit ${bat:0:1} $(($newl+2)) $(($indent+12)) $blocks1 &
+            print_digit ${bat:1} $(($newl+2)) $(($indent+20)) $blocks2 &
         ;;
         3)
-            print_digit 1 $(($newl+2)) $(($indent+8))  100
-            print_digit 0 $(($newl+2)) $(($indent+16)) 100
-            print_digit 0 $(($newl+2)) $(($indent+24)) 100
+            print_digit 1 $(($newl+2)) $(($indent+8))  100 &
+            print_digit 0 $(($newl+2)) $(($indent+16)) 100 &
+            print_digit 0 $(($newl+2)) $(($indent+24)) 100 &
         ;;
     esac
+
+    tput cup $(tput lines) 0
 }
 
 print_charge () {
@@ -288,27 +293,27 @@ print_charge () {
         bot2=""
         fi
 
-        tput cup $(($newl+3)) $(($indent+44))
+        charge="\033[$(($newl+3));$(($indent+44))H"
         if [ $charging -eq 1 ]; then
-            printf "      ${charge_color}$top1███████$top2"
+            charge+="      ${charge_color}$top1███████$top2"
         else
-            printf "                 "
+            charge+="                 "
         fi
 
 
-        tput cup $(($newl+4)) $(($indent+44))
+        charge+="\033[$(($newl+4));$(($indent+44))H"
         if [ $charging -eq 1 ]; then	
-            printf "       ${charge_color}$mid1█$mid2"
+            charge+="       ${charge_color}$mid1█$mid2"
         else
-            printf "              "
+            charge+="              "
         fi
         
 
-        tput cup $(($newl+5)) $(($indent+44))
+        charge+="\033[$(($newl+5));$(($indent+44))H"
         if [ $charging -eq 1 ]; then	
-            printf "   ${charge_color}$bot1███████$bot2"
+            charge+="   ${charge_color}$bot1███████$bot2"
         else
-            printf "            "
+            charge+="            "
         fi
 
     else
@@ -320,42 +325,45 @@ print_charge () {
         end2=""
         fi
 
-        tput cup $(($newl+3)) $(($indent+44))
+        charge="\033[$(($newl+3));$(($indent+44))H"
         if [ $charging -eq 1 ]; then	
-            printf "       ${charge_color}$end1██████$end2"
+            charge+="       ${charge_color}$end1██████$end2"
         else
-            printf "               "
+            charge+="               "
         fi
 
-        tput cup $(($newl+4)) $(($indent+44))
+        charge+="\033[$(($newl+4));$(($indent+44))H"
         if [ $charging -eq 1 ]; then	
-            printf "    ${charge_color}$end1██████$end2"
+            charge+="    ${charge_color}$end1██████$end2"
         else
-            printf "            "
+            charge+="            "
         fi
     fi
+    printf "$charge"
+    tput cup $(tput cols) 0
 }
 
 print_bat_row () {
     i=0
 
-    printf "${shell_color}██"
+    row="${shell_color}██"
 
     while [ $i -le 33 ]; do
         if [ $i -le $blocks ]; then
-            printf "${battery_color}█"
+            row+="${battery_color}█"
         else
-            printf " "
+            row+=" "
         fi
 
         ((i+=1))
     done
 
     if [ $1 -eq 0 ]; then
-        printf "${shell_color}████"
+        row+="${shell_color}████"
     else 
-        printf "${shell_color}████████"
+        row+="${shell_color}████████"
     fi
+    printf "$row"
 }
 
 print_col () {
@@ -369,14 +377,12 @@ print_col () {
         new_sym=" "
     fi
 
-    tput cup $(($newl+1)) $index
-    printf "$battery_color"
+    col="$battery_color"
 
     for i in $(seq 0 $1); do
-        printf "$new_sym"
-        tput cud 1
-        tput cub 1
+        col+="\033[$(($newl+$i+1));$(($index))H$new_sym"
     done
+    printf "$col"
 }
 
 print_bat () {
@@ -387,24 +393,19 @@ print_bat () {
     fi
 
     if [[ $redraw == 0 ]]; then
-        tput cup $newl $indent
-        printf "${shell_color}████████████████████████████████████████\n"
-
-        tput cup $(($newl+1)) $indent
-        print_bat_row 0
+        printf "\033[$newl;$((indent))H${shell_color}████████████████████████████████████████\n" & 
+        printf "\033[$(($newl+1));$(($indent))H$(print_bat_row 0)" &
 
         for i in $(seq 2 $core_rows); do
-            tput cup $(($newl+$i)) $indent
-            print_bat_row 1
+                printf "\033[$(($newl+$i));$(($indent))H$(print_bat_row 1)" &
         done
 
-        tput cup $(($newl+$core_rows+1)) $indent
-        print_bat_row 0
-
-        tput cup $(($newl+$core_rows+2)) $indent
-        printf "${shell_color}████████████████████████████████████████\n"
+        printf "\033[$(($newl+$core_rows+1));$(($indent))H$(print_bat_row 0)" &
+        printf "\033[$(($newl+$core_rows+2));$(($indent))H${shell_color}████████████████████████████████████████\n" &
 
         redraw=1
+        printf "$img"
+
     else
         if [[ $blocks == $old_blocks ]]; then
             return 0
@@ -413,6 +414,8 @@ print_bat () {
         fi
         old_blocks=$blocks
     fi
+
+    tput cup $(tput lines) 0
 }
 
 big_loop () {
@@ -421,16 +424,16 @@ big_loop () {
         rows=$(tput lines)
         cols=$(tput cols)
 
-        let rows=$rows newl=rows/2-3
-        let cols=$cols indent=cols/2-25
+        let rows=$rows newl=rows/2-2
+        let cols=$cols indent=cols/2-24
     fi
 
     set_core_color
     check_number_length_change
 
     print_bat
-    print_charge
-    print_number
+    print_charge &
+    print_number &
 }
 
 print_small_bat_row () {
@@ -509,7 +512,8 @@ fi
 
 tput civis
 bat_status
-main_loop "resize"
+main_loop "resize" &
+tput cup $(tput lines) 0
 
 if [[ $live == true ]]; then
     while [ 0 ]; do
@@ -519,7 +523,7 @@ if [[ $live == true ]]; then
         fi
 
         if [[ "$previous_charge" != "$charging" ]] || [[ "$previous_bat" != "$bat" ]]; then
-            main_loop 
+            main_loop
         fi
 
         handle_event || break
