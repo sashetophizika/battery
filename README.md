@@ -58,4 +58,3 @@ fat=false
 alt_charge=false
 ```
 The config file is just sourced as a bash script, so technically it can be used to run any code at the start and there has to be no whitespace between the equals signs. Be careful not to run random commands.
-

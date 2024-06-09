@@ -5,7 +5,6 @@ color60p="\033[0;33m"
 color20p="\033[0;31m"
 color_shell="\033[0m"
 color_charge="\033[0;36m"
-NC="\033[0m"
 
 colors=true 
 live=false 
@@ -27,7 +26,7 @@ OPTIONS
   -l              Monitor the battery live
   -s              Use a small version of the battery instead
   -f              Draws a slightly thicker battery
-  -d              Prints the current battery as a number in the picture
+  -d              Prints the current capacity as a number in the battery
   -m              Minimal print of the battery status
   -c              Use alternate charging symbol (requires nerd fonts)
   -n              Disable colors
@@ -109,7 +108,7 @@ else
 fi
 
 handle_event () {
-    read -sn 1 -t 0.1 key
+    read -sn 1 -t 0.1 key > /dev/null
 
     case $key in 
         "q" | $'\e')
@@ -118,11 +117,12 @@ handle_event () {
         "d")
             if [[ $digits == true ]]; then
                 digits=false
-                redraw=0
             else
                 digits=true
             fi
-            main_loop
+
+            check_number_length_change
+            print_number &
         ;;
         "r")
             redraw=0
@@ -183,18 +183,55 @@ check_number_length_change () {
     fi
 }
 
-print_digit_parts () {
+print_digit () {
+    case $1 in 
+    0)                
+        chars="111111110011110011110011111111"
+        ;;
+    1) 
+        chars="111100001100001100001100111111"
+    ;;                
+    2)                
+        chars="111111000011111111110000111111"  
+    ;;                
+    3)                
+        chars="111111000011111111000011111111"  
+    ;;                
+    4)                
+        chars="110011110011111111000011000011"  
+    ;;                
+    5)                
+        chars="111111110000111111000011111111"  
+    ;;                
+    6)                
+        chars="111111110000111111110011111111"  
+    ;;                
+    7)                
+        chars="111111000011000011000011000011"  
+    ;;                
+    8)                
+        chars="111111110011111111110011111111"  
+    ;;                
+    9)                
+        chars="111111110011111111000011111111"  
+    ;;                
+    esac
+
+    if [[ $digits == false ]]; then
+        chars="000000000000000000000000000000"
+    fi
+
     num="$battery_color\033[$2;$3H"
 
     for i in $(seq 0 29); do
         if (( $i % 6 < $4 )); then
-            if [[ "${1:$i:1}" == "1" ]]; then
+            if [[ "${chars:$i:1}" == "1" ]]; then
                 num+=" "
             else
                 num+="█"
             fi
         else
-            if [[ "${1:$i:1}" == "1" ]]; then
+            if [[ "${chars:$i:1}" == "1" ]]; then
                 num+="█"
             else
                 num+=" "
@@ -208,45 +245,7 @@ print_digit_parts () {
     printf "$num"
 }
 
-print_digit () {
-    case $1 in 
-    0)                
-        print_digit_parts "111111110011110011110011111111" $2 $3 $4 
-        ;;
-    1) 
-        print_digit_parts "111100001100001100001100111111" $2 $3 $4
-    ;;                
-    2)                
-        print_digit_parts "111111000011111111110000111111" $2 $3 $4 
-    ;;                
-    3)                
-        print_digit_parts "111111000011111111000011111111" $2 $3 $4 
-    ;;                
-    4)                
-        print_digit_parts "110011110011111111000011000011" $2 $3 $4 
-    ;;                
-    5)                
-        print_digit_parts "111111110000111111000011111111" $2 $3 $4 
-    ;;                
-    6)                
-        print_digit_parts "111111110000111111110011111111" $2 $3 $4 
-    ;;                
-    7)                
-        print_digit_parts "111111000011000011000011000011" $2 $3 $4 
-    ;;                
-    8)                
-        print_digit_parts "111111110011111111110011111111" $2 $3 $4 
-    ;;                
-    9)                
-        print_digit_parts "111111110011111111000011111111" $2 $3 $4 
-    ;;                
-    esac
-}
-
 print_number () {
-    if [[ $digits == false ]]; then
-        return 0
-    fi
 
     case $old_num_length in 
         1) 
@@ -394,13 +393,13 @@ print_bat () {
 
     if [[ $redraw == 0 ]]; then
         printf "\033[$newl;$((indent))H${shell_color}████████████████████████████████████████\n" & 
-        printf "\033[$(($newl+1));$(($indent))H$(print_bat_row 0)" &
+        printf "\033[$(($newl+1));$(($indent))H$(print_bat_row 0 &)" &
 
         for i in $(seq 2 $core_rows); do
-                printf "\033[$(($newl+$i));$(($indent))H$(print_bat_row 1)" &
+                printf "\033[$(($newl+$i));$(($indent))H$(print_bat_row 1 &)" &
         done
 
-        printf "\033[$(($newl+$core_rows+1));$(($indent))H$(print_bat_row 0)" &
+        printf "\033[$(($newl+$core_rows+1));$(($indent))H$(print_bat_row 0 &)" &
         printf "\033[$(($newl+$core_rows+2));$(($indent))H${shell_color}████████████████████████████████████████\n" &
 
         redraw=1
@@ -479,7 +478,10 @@ print_small_bat () {
 small_loop () {
     set_core_color
     print_small_bat
-    tput cuu 5
+
+    if [[ $live == true ]]; then
+        tput cuu 5
+    fi
 }
 
 main_loop () {
@@ -490,13 +492,13 @@ main_loop () {
     fi
 }
 
-battery_color=$NC
+battery_color="\033[0m"
 if [[ $colors == true ]]; then
     charge_color=$color_charge
     shell_color=$color_shell
 else
-    charge_color=$NC
-    shell_color=$NC
+    charge_color="\033[0m"
+    shell_color="\033[0m"
 fi
 
 if [[ $minimal == true ]]; then
@@ -513,7 +515,10 @@ fi
 tput civis
 bat_status
 main_loop "resize" &
-tput cup $(tput lines) 0
+
+if [[ $small == false ]]; then
+    tput cup $(tput lines) 0
+fi
 
 if [[ $live == true ]]; then
     while [ 0 ]; do
