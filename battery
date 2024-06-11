@@ -209,7 +209,7 @@ bat_status () {
     bat=${bat:22:3}
 
     status=$(echo "$uevent" | sed '4q;d')
-    status=${status:28:20}
+    status=${status:20:20}
 
     if [[ $printable == 't' ]] || [[ $1 == "full" ]]; then
         previous_temp=$temp
@@ -643,7 +643,7 @@ if [[ $live == true ]]; then
 
         if [[ $small == false ]]; then
             case $printable in
-                't')
+            't')
                 if [[ $previous_temp != $temp ]]; then
                     main_loop
                 fi
