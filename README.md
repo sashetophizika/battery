@@ -31,6 +31,7 @@ battery
 * **-s**: print a small inline battery instead
 * **-f**: print a slightly thicker battery
 * **-d**: print the current capacity as a number inside of the battery (does not work with -s)
+* **-p=(printable)**: specify what to print with -d (c for capacity, p for power, t for temperature)
 * **-m**: print minimal text output
 * **-c**: use an alternate charging symbol (requires nerd fonts)
 * **-n**: remove colors
@@ -43,11 +44,13 @@ You can create `~/.config/battery/battery.conf` in order to change the colors an
 ### Default configuration:
 
 ```bash
-color100p="\033[0;32m" #core color between 60-100%
-color60p="\033[0;33m" #core color between 20-60%
-color20p="\033[0;31m" #core color between 0-20%
-color_shell="\033[0m" #color of the outer shell
-color_charge="\033[0;36m" #color of the charging symbol
+#colors can be [red | green | yellow | blue | magenta | cyan | white | black | none] or a hex code with capital letters "#0000FF" 
+color100p="green" #core color between 60-100%
+color60p="yellow" #core color between 20-60%
+color20p="red" #core color between 0-20%
+color_shell="white" #color of the outer shell
+color_charge="cyan" #color of the charging symbol
+printable='c'
 
 colors=true 
 live=false 

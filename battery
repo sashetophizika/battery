@@ -1,5 +1,4 @@
 #!/bin/bash
-
 color100p="\033[0;32m"
 color60p="\033[0;33m"
 color20p="\033[0;31m"
@@ -13,6 +12,7 @@ small=false
 digits=false
 fat=false
 alt_charge=false
+printable='c'
 
 bat_number="$(find /sys/class/power_supply -iname 'BAT*' | sort -g | head -n 1)"
 
@@ -24,16 +24,17 @@ print_help () {
 
 OPTIONS
   -l              Monitor the battery live
-  -s              Use a small version of the battery instead
+  -s              Print a small version of the battery
   -f              Draws a slightly thicker battery
   -d              Prints the current capacity as a number in the battery
+  -p PRINTABLE    Specify what to print with -d (c for capacity, p for power, t for temperature)
   -m              Minimal print of the battery status
   -c              Use alternate charging symbol (requires nerd fonts)
   -n              Disable colors
   -b BAT_NUMBER   Specify battery number"
 }
 
-while getopts ":hnlmcsdfb:" option; do
+while getopts ":hnlmtp:csdfb:" option; do
       case $option in
     n)
         if [[ $colors == true ]]; then
@@ -70,6 +71,9 @@ while getopts ":hnlmcsdfb:" option; do
             digits=true
         fi
     ;;
+    p)
+        printable=$OPTARG
+    ;;
     f)
         if [[ $fat == true ]]; then
             fat=false
@@ -100,12 +104,55 @@ done
 
 if [[ $small == false ]]; then
     if [[ $minimal == false ]]; then
-        trap "tput cup $(tput lines) 0; tput cnorm" EXIT
+        trap "tput cnorm; tput cup $(tput lines) 0; stty echo" EXIT
     fi
-    clear
 else
-    trap 'tput cud 5; tput cnorm' EXIT
+    trap 'tput cud 5; tput cnorm; stty echo' EXIT
 fi
+
+hex_to_ansi () {
+    case "$1" in
+        none)
+            echo "\e[0m"
+            ;;
+        black) 
+            echo "\e[0;30m"
+            ;;
+        red)
+            echo "\e[0;31m"
+            ;;
+        green) 
+            echo "\e[0;32m"
+            ;;
+        yellow) 
+            echo "\e[0;33m"
+            ;;
+        blue) 
+            echo "\e[0;34m"
+            ;;
+        magenta) 
+            echo "\e[0;35m"
+            ;;
+        cyan) 
+            echo "\e[0;36m"
+            ;;
+        white) 
+            echo "\e[0;37m"
+            ;;
+        \#*)
+            echo "\e[38;2;$((16#${1:1:2}));$((16#${1:3:2}));$((16#${1:5:2}))m"
+            ;;
+        *)
+            echo $1
+            ;;
+    esac
+}
+
+color100p=$(hex_to_ansi $color100p)
+color60p=$(hex_to_ansi $color60p)
+color20p=$(hex_to_ansi $color20p)
+color_shell=$(hex_to_ansi $color_shell)
+color_charge=$(hex_to_ansi $color_charge)
 
 handle_event () {
     read -sn 1 -t 0.1 key > /dev/null
@@ -121,12 +168,26 @@ handle_event () {
                 digits=true
             fi
 
+            bat_status
             check_number_length_change
             print_number &
         ;;
+        "t")
+            if [[ $printable == 'c' ]]; then
+                printable='p'
+            elif [[ $printable == 'p' ]]; then
+                printable='t'
+            elif [[ $printable == 't' ]]; then
+                printable='c'
+            fi
+
+            bat_status
+            big_loop
+        ;;
         "r")
             redraw=0
-            main_loop
+            bat_status
+            main_loop &
         ;;
     esac
     return 0
@@ -135,7 +196,7 @@ handle_event () {
 redraw=0
 blocks=0
 old_color=$battery_color
-old_num_length=${#bat}
+old_num_length=0
 old_blocks=$blocks
 old_index=$(($indent+$blocks))
 
@@ -143,11 +204,34 @@ bat_status () {
     previous_bat=$bat
     previous_charge=$charging
 
-    bat=$(cat $bat_number/capacity)
+    uevent=$(cat $bat_number/uevent)
+    bat=$(echo "$uevent" |  grep CAPACITY=)
+    bat=${bat:22:3}
+
+    status=$(echo "$uevent" | sed '4q;d')
+    status=${status:28:20}
+
+    if [[ $printable == 't' ]] || [[ $1 == "full" ]]; then
+        previous_temp=$temp
+        temp=$(($(cat $bat_number/temp) / 10))
+    fi
+
+    if [[ $printable == 'p' ]] || [[ $1 == "full" ]]; then
+        current=$(echo "$uevent" | sed '10q;d')
+        voltage=$(echo "$uevent" | sed '9q;d')
+
+        current=${current:25:20}
+        voltage=${voltage:25:20}
+
+        if [[ $current ]] && [[ $voltage ]]; then
+            previous_power=$power
+            power=$(($current * $voltage / 1000000000000))
+        fi
+    fi
+    
     blocks=$(($bat/3))
     fill_cols=$((bat/3+4))
 
-    status=$(cat $bat_number/status)
     if [[ $status == "Discharging" ]] || [[ $status == "Not charging" ]]; then
         charging=0
     else
@@ -157,14 +241,13 @@ bat_status () {
 
 set_core_color () {
     if [[ $colors == true ]]; then 
-        battery_color=$color100p
-
-        if (( $bat < 60 )) then
-            battery_color=$color60p
-        fi
 
         if (( $bat < 20 )); then
             battery_color=$color20p
+        elif (( $bat < 60 )); then
+            battery_color=$color60p
+        else
+            battery_color=$color100p
         fi
 
         if [[ "$battery_color" != "$old_color" ]]; then
@@ -176,10 +259,22 @@ set_core_color () {
 
 check_number_length_change () {
     if [[ $digits == true ]]; then
-        if [[ "$old_num_length" != "${#bat}" ]]; then
+        case $printable in
+            'c')
+                data=$bat
+            ;;
+            'p')
+                data=$power
+            ;;
+            't')
+                data=$temp
+            ;;
+        esac
+
+        if [[ "$old_num_length" != "${#data}" ]]; then
             redraw=0
         fi
-        old_num_length=${#bat}
+        old_num_length=${#data}
     fi
 }
 
@@ -187,7 +282,7 @@ print_digit () {
     case $1 in 
     0)                
         chars="111111110011110011110011111111"
-        ;;
+    ;;
     1) 
         chars="111100001100001100001100111111"
     ;;                
@@ -246,10 +341,25 @@ print_digit () {
 }
 
 print_number () {
+    case $printable in
+    'c')
+        data=$bat
+    ;;
+    'p')
+        data=$power
+    ;;
+    't')
+        data=$temp
+    ;;
+    esac
 
-    case $old_num_length in 
+    case ${#data} in 
         1) 
-            print_digit $bat $(($newl+2)) $(($indent+16)) 0
+            blocks1=0
+            if (( $fill_cols > 16 )); then
+                blocks1=$(($fill_cols-17))
+            fi
+            print_digit $data $(($newl+2)) $(($indent+16)) $blocks1 &
         ;;
         2)
             blocks1=0
@@ -261,13 +371,26 @@ print_number () {
                 fi
             fi
 
-            print_digit ${bat:0:1} $(($newl+2)) $(($indent+12)) $blocks1 &
-            print_digit ${bat:1} $(($newl+2)) $(($indent+20)) $blocks2 &
+            print_digit ${data:0:1} $(($newl+2)) $(($indent+12)) $blocks1 &
+            print_digit ${data:1:1} $(($newl+2)) $(($indent+20)) $blocks2 &
         ;;
         3)
-            print_digit 1 $(($newl+2)) $(($indent+8))  100 &
-            print_digit 0 $(($newl+2)) $(($indent+16)) 100 &
-            print_digit 0 $(($newl+2)) $(($indent+24)) 100 &
+            blocks1=0
+            blocks2=0
+            blocks3=0
+            if (( $fill_cols > 8 )); then
+                blocks1=$(($fill_cols-9))
+                if (( $fill_cols > 16 )); then
+                    blocks2=$(($fill_cols-17))
+                    if (( $fill_cols > 24 )); then
+                        blocks3=$(($fill_cols-25))
+                    fi
+                fi
+            fi
+
+            print_digit ${data:0:1} $(($newl+2)) $(($indent+8))  $blocks1 &
+            print_digit ${data:1:1} $(($newl+2)) $(($indent+16)) $blocks2 &
+            print_digit ${data:2:1} $(($newl+2)) $(($indent+24)) $blocks3 &
         ;;
     esac
 
@@ -276,25 +399,18 @@ print_number () {
 
 print_charge () {
     if [[ $fat == true ]]; then
-        top1=" "
-        top2=""
-        mid1="█"
-        mid2="█"
-        bot1=""
-        bot2=""
+        fat_set=("  ██" "")
 
+        extra=""
+        set_id=0
         if [[ $alt_charge == true ]]; then
-        top1=""
-        top2=""
-        mid1="█"
-        mid2=""
-        bot1=""
-        bot2=""
+            extra="█"
+            set_id=1
         fi
 
         charge="\033[$(($newl+3));$(($indent+44))H"
         if [ $charging -eq 1 ]; then
-            charge+="      ${charge_color}$top1███████$top2"
+            charge+="      ${charge_color}${fat_set[$set_id]:1:1}███████${fat_set[$set_id]:0:1}"
         else
             charge+="                 "
         fi
@@ -302,7 +418,7 @@ print_charge () {
 
         charge+="\033[$(($newl+4));$(($indent+44))H"
         if [ $charging -eq 1 ]; then	
-            charge+="       ${charge_color}$mid1█$mid2"
+            charge+="       ${charge_color}${fat_set[$set_id]:3:1}$extra█${fat_set[$set_id]:2:1}"
         else
             charge+="              "
         fi
@@ -310,30 +426,29 @@ print_charge () {
 
         charge+="\033[$(($newl+5));$(($indent+44))H"
         if [ $charging -eq 1 ]; then	
-            charge+="   ${charge_color}$bot1███████$bot2"
+            charge+="   ${charge_color}${fat_set[$set_id]:5:1}███████${fat_set[$set_id]:4:1}"
         else
             charge+="            "
         fi
 
     else
-        end1="█"
-        end2="█"
+        set=("██" "")
 
+        set_id=0
         if [[ $alt_charge == true ]]; then
-        end1=""
-        end2=""
+            set_id=1
         fi
 
         charge="\033[$(($newl+3));$(($indent+44))H"
         if [ $charging -eq 1 ]; then	
-            charge+="       ${charge_color}$end1██████$end2"
+            charge+="       ${charge_color}${set[$set_id]:0:1}██████${set[$set_id]:1}"
         else
             charge+="               "
         fi
 
         charge+="\033[$(($newl+4));$(($indent+44))H"
         if [ $charging -eq 1 ]; then	
-            charge+="    ${charge_color}$end1██████$end2"
+            charge+="    ${charge_color}${set[$set_id]:0:1}██████${set[$set_id]:1}"
         else
             charge+="            "
         fi
@@ -502,17 +617,20 @@ else
 fi
 
 if [[ $minimal == true ]]; then
-    bat_status
-    echo "Battery: $bat%"
+    bat_status "full"
+    printf "Battery: $bat%%\n"
+    printf "Power Draw: %dW\n" $power
+    printf "Temperature: $temp°\n"
     if [[ $charging == 1 ]]; then
-        echo "Charging: True"
+        printf "Charging: True\n"
     else
-        echo "Charging: False"
+        printf "Charging: False\n"
     fi
     exit 0
 fi
 
 tput civis
+stty -echo
 bat_status
 main_loop "resize" &
 
@@ -522,6 +640,22 @@ fi
 
 if [[ $live == true ]]; then
     while [ 0 ]; do
+
+        if [[ $small == false ]]; then
+            case $printable in
+                't')
+                if [[ $previous_temp != $temp ]]; then
+                    main_loop
+                fi
+            ;;
+            'p')
+                if [[ $previous_power != $power ]]; then
+                    main_loop
+                fi
+            ;;
+            esac
+        fi
+
         if [[ $(tput lines) != "$rows" ]] || [[ $(tput cols) != "$cols" ]]; then
             redraw=0
             main_loop "resize"
