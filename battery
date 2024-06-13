@@ -104,7 +104,11 @@ done
 
 if [[ $small == false ]]; then
     if [[ $minimal == false ]]; then
-        trap "tput cnorm; tput cup $(tput lines) 0; stty echo" EXIT
+        if [[ $live == false ]]; then
+            trap "tput cnorm; tput cup $(tput lines) 0; stty echo" EXIT
+        else
+            trap "tput cnorm; tput rmcup; stty echo" EXIT
+        fi
     fi
 else
     trap 'tput cud 5; tput cnorm; stty echo' EXIT
@@ -155,7 +159,7 @@ color_shell=$(hex_to_ansi $color_shell)
 color_charge=$(hex_to_ansi $color_charge)
 
 handle_event () {
-    read -sn 1 -t 0.1 key > /dev/null
+    read -sn 1 -t 0.1 key
 
     case $key in 
         "q" | $'\e')
@@ -169,8 +173,7 @@ handle_event () {
             fi
 
             bat_status
-            check_number_length_change
-            print_number &
+            big_loop
         ;;
         "t")
             if [[ $printable == 'c' ]]; then
@@ -195,6 +198,7 @@ handle_event () {
 
 redraw=0
 blocks=0
+polarity=''
 old_color=$battery_color
 old_num_length=0
 old_blocks=$blocks
@@ -205,7 +209,7 @@ bat_status () {
     previous_charge=$charging
 
     uevent=$(cat $bat_number/uevent)
-    bat=$(echo "$uevent" |  grep CAPACITY=)
+    bat=$(echo "$uevent" | grep CAPACITY=)
     bat=${bat:22:3}
 
     status=$(echo "$uevent" | sed '4q;d')
@@ -234,30 +238,14 @@ bat_status () {
 
     if [[ $status == "Discharging" ]] || [[ $status == "Not charging" ]]; then
         charging=0
+        polarity="-"
     else
         charging=1
+        polarity="+"
     fi
 }
 
-set_core_color () {
-    if [[ $colors == true ]]; then 
-
-        if (( $bat < 20 )); then
-            battery_color=$color20p
-        elif (( $bat < 60 )); then
-            battery_color=$color60p
-        else
-            battery_color=$color100p
-        fi
-
-        if [[ "$battery_color" != "$old_color" ]]; then
-            redraw=0
-        fi
-        old_color=$battery_color
-    fi
-}
-
-check_number_length_change () {
+update_state () {
     if [[ $digits == true ]]; then
         case $printable in
             'c')
@@ -276,10 +264,32 @@ check_number_length_change () {
         fi
         old_num_length=${#data}
     fi
+
+    if [[ $colors == true ]]; then 
+
+        if (( $bat < 20 )); then
+            battery_color=$color20p
+        elif (( $bat < 60 )); then
+            battery_color=$color60p
+        else
+            battery_color=$color100p
+        fi
+
+        if [[ "$battery_color" != "$old_color" ]]; then
+            redraw=0
+        fi
+        old_color=$battery_color
+    fi
 }
 
 print_digit () {
     case $1 in 
+    '-')                
+        chars="000000000000111111000000000000"
+    ;;
+    '+') 
+        chars="000000001100111111001100000000"
+    ;;                
     0)                
         chars="111111110011110011110011111111"
     ;;
@@ -538,15 +548,14 @@ big_loop () {
         rows=$(tput lines)
         cols=$(tput cols)
 
-        let rows=$rows newl=rows/2-2
-        let cols=$cols indent=cols/2-24
+        newl=$((rows/2-3))
+        indent=$((cols/2-24))
     fi
 
-    set_core_color
-    check_number_length_change
+    update_state
 
-    print_bat
     print_charge &
+    print_bat
     print_number &
 }
 
@@ -591,12 +600,9 @@ print_small_bat () {
 }
 
 small_loop () {
-    set_core_color
+    update_state
     print_small_bat
-
-    if [[ $live == true ]]; then
-        tput cuu 5
-    fi
+    tput cuu 5
 }
 
 main_loop () {
@@ -631,8 +637,10 @@ fi
 
 tput civis
 stty -echo
+tput smcup
+
 bat_status
-main_loop "resize" &
+main_loop "resize"
 
 if [[ $small == false ]]; then
     tput cup $(tput lines) 0
