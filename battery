@@ -1,7 +1,10 @@
 #!/bin/bash
-color100p="\033[0;32m"
-color60p="\033[0;33m"
-color20p="\033[0;31m"
+color_100p="\033[0;32m"
+color_60p="\033[0;33m"
+color_20p="\033[0;31m"
+color_temp="\033[0;35m"
+color_time_full="\033[0;36m"
+color_time_left="\033[0;34m"
 color_shell="\033[0m"
 color_charge="\033[0;36m"
 
@@ -12,7 +15,8 @@ small=false
 digits=false
 fat=false
 alt_charge=false
-printable='c'
+extra_colors=true
+mode='c'
 
 bat_number="$(find /sys/class/power_supply -iname 'BAT*' | sort -g | head -n 1)"
 
@@ -27,7 +31,8 @@ OPTIONS
   -s              Print a small version of the battery
   -f              Draws a slightly thicker battery
   -d              Prints the current capacity as a number in the battery
-  -p PRINTABLE    Specify what to print with -d (c for capacity, p for power, t for temperature)
+  -p MODE         Specify the mode to be printed with -d (c for capacity, m for time, t for temperature)
+  -e              Disable extra core color patterns for different modes
   -m              Minimal print of the battery status
   -c              Use alternate charging symbol (requires nerd fonts)
   -n              Disable colors
@@ -72,7 +77,9 @@ while getopts ":hnlmtp:csdfb:" option; do
         fi
     ;;
     p)
-        printable=$OPTARG
+        if [[ $(echo 'ctm' | grep $OPTARG) ]]; then
+            mode=$OPTARG
+        fi
     ;;
     f)
         if [[ $fat == true ]]; then
@@ -152,11 +159,14 @@ hex_to_ansi () {
     esac
 }
 
-color100p=$(hex_to_ansi $color100p)
-color60p=$(hex_to_ansi $color60p)
-color20p=$(hex_to_ansi $color20p)
-color_shell=$(hex_to_ansi $color_shell)
-color_charge=$(hex_to_ansi $color_charge)
+color_100p=$(hex_to_ansi $color_100p) 
+color_60p=$(hex_to_ansi $color_60p) 
+color_20p=$(hex_to_ansi $color_20p) 
+color_temp=$(hex_to_ansi $color_temp) 
+color_time_full=$(hex_to_ansi $color_time_full) 
+color_time_left=$(hex_to_ansi $color_time_left) 
+color_shell=$(hex_to_ansi $color_shell) 
+color_charge=$(hex_to_ansi $color_charge) 
 
 handle_event () {
     read -sn 1 -t 0.1 key
@@ -176,12 +186,12 @@ handle_event () {
             big_loop
         ;;
         "t")
-            if [[ $printable == 'c' ]]; then
-                printable='p'
-            elif [[ $printable == 'p' ]]; then
-                printable='t'
-            elif [[ $printable == 't' ]]; then
-                printable='c'
+            if [[ $mode == 'c' ]]; then
+                mode='t'
+            elif [[ $mode == 't' ]]; then
+                mode='m'
+            elif [[ $mode == 'm' ]]; then
+                mode='c'
             fi
 
             bat_status
@@ -190,8 +200,45 @@ handle_event () {
         "r")
             redraw=0
             bat_status
-            main_loop &
+            main_loop
         ;;
+        "c")
+            if [[ $alt_charge == true ]]; then
+                alt_charge=false
+            else
+                alt_charge=true
+            fi
+            print_charge
+            ;;
+        "f")
+            if [[ $fat == true ]]; then
+                fat=false
+            else
+                fat=true
+            fi
+            redraw=0
+            main_loop "resize"
+            ;;
+        "n")
+            if [[ $colors == true ]]; then
+                colors=false
+                charge_color="\033[0m"
+                shell_color="\033[0m"
+            else
+                colors=true
+                charge_color=$color_charge
+                shell_color=$color_shell
+            fi
+
+            redraw=0
+            main_loop
+            ;;
+#        "a")
+#            echo $(($bat+1)) > ~/testbat/capacity
+#            ;;
+#        "s")
+#            echo $(($bat-1)) > ~/testbat/capacity
+#            ;;
     esac
     return 0
 }
@@ -209,32 +256,18 @@ bat_status () {
     previous_charge=$charging
 
     uevent=$(cat $bat_number/uevent)
-    bat=$(echo "$uevent" | grep CAPACITY=)
+    bat=$(echo "$uevent" | grep CAPACITY= &)
     bat=${bat:22:3}
+#    bat=$(cat ~/testbat/capacity)
 
-    status=$(echo "$uevent" | sed '4q;d')
+    status=$(echo "$uevent" | sed '4q;d' &)
     status=${status:20:20}
 
-    if [[ $printable == 't' ]] || [[ $1 == "full" ]]; then
+
+    if [[ $mode == 't' ]] || [[ $1 == "full" ]]; then
         previous_temp=$temp
-        temp=$(($(cat $bat_number/temp) / 10))
+        temp=$(($(cat $bat_number/temp &) / 10))
     fi
-
-    if [[ $printable == 'p' ]] || [[ $1 == "full" ]]; then
-        current=$(echo "$uevent" | sed '10q;d')
-        voltage=$(echo "$uevent" | sed '9q;d')
-
-        current=${current:25:20}
-        voltage=${voltage:25:20}
-
-        if [[ $current ]] && [[ $voltage ]]; then
-            previous_power=$power
-            power=$(($current * $voltage / 1000000000000))
-        fi
-    fi
-    
-    blocks=$(($bat/3))
-    fill_cols=$((bat/3+4))
 
     if [[ $status == "Discharging" ]] || [[ $status == "Not charging" ]]; then
         charging=0
@@ -243,119 +276,186 @@ bat_status () {
         charging=1
         polarity="+"
     fi
+
+    if [[ $mode == 'm' ]] || [[ $1 == "full" ]]; then
+        current=$(echo "$uevent" | grep CURRENT_NOW &)
+        charge_now=$(echo "$uevent" | grep CHARGE_NOW &)
+        charge_full=$(echo "$uevent" | grep CHARGE_FULL= &)
+
+        current=${current:25:20}
+        charge_now=${charge_now:24:20}
+        charge_full=${charge_full:25:20}
+
+        if [[ $current ]] && [[ $charge_now ]] && [[ $charge_full ]]; then
+            previous_power=$power
+
+            if [[ $charging == 1 ]]; then
+                power=$((($charge_full - $charge_now) * 60 / $current))
+            else
+                power=$(($charge_now * 60 / $current))
+            fi
+        fi
+    fi
+
+    blocks=$(($bat/3))
+    fill_cols=$((bat/3+4))
+
+    wait
 }
 
 update_state () {
-    if [[ $digits == true ]]; then
-        case $printable in
-            'c')
-                data=$bat
-            ;;
-            'p')
-                data=$power
-            ;;
-            't')
-                data=$temp
-            ;;
-        esac
-
-        if [[ "$old_num_length" != "${#data}" ]]; then
-            redraw=0
-        fi
-        old_num_length=${#data}
+    if (( $bat < 20 )); then
+        battery_color=$color_20p
+    elif (( $bat < 60 )); then
+        battery_color=$color_60p
+    else
+        battery_color=$color_100p
     fi
 
-    if [[ $colors == true ]]; then 
+    case $mode in
+        'c')
+            data=$bat
 
-        if (( $bat < 20 )); then
-            battery_color=$color20p
-        elif (( $bat < 60 )); then
-            battery_color=$color60p
-        else
-            battery_color=$color100p
-        fi
+        ;;
+        'm')
+            data=$power
 
-        if [[ "$battery_color" != "$old_color" ]]; then
-            redraw=0
-        fi
-        old_color=$battery_color
+            if [[ $extra_colors == true ]]; then
+                if [[ $charging == 1 ]]; then
+                    battery_color=$color_time_full
+                else
+                    battery_color=$color_time_left
+                fi
+            fi
+        ;;
+        't')
+            data=$temp
+
+            if [[ $extra_colors == true ]]; then
+                battery_color=$color_temp
+            fi
+        ;;
+    esac
+    
+    if [[ $colors == false ]]; then
+        battery_color="\e[0m"
     fi
+
+    if [[ "$old_num_length" != "${#data}" ]]; then
+        redraw=0
+    fi
+    old_num_length=${#data}
+
+    if [[ "$battery_color" != "$old_color" ]]; then
+        redraw=0
+    fi
+    old_color=$battery_color
 }
 
 print_digit () {
     case $1 in 
     '-')                
+        full="         "
         chars="000000000000111111000000000000"
     ;;
     '+') 
         chars="000000001100111111001100000000"
     ;;                
     0)                
+        full="██████\e[1B\e[$3G██  ██\e[1B\e[$3G██  ██\e[1B\e[$3G██  ██\e[1B\e[$3G██████"
+        empty="      \e[1B\033[$3G  ██  \e[1B\e[$3G  ██  \e[1B\e[$3G  ██  \e[1B\e[$3G      "
         chars="111111110011110011110011111111"
     ;;
     1) 
+        full="████  \e[1B\e[$3G  ██  \e[1B\e[$3G  ██  \e[1B\e[$3G  ██  \e[1B\e[$3G██████"
+        empty="    ██\e[1B\e[$3G██  ██\e[1B\e[$3G██  ██\e[1B\e[$3G██  ██\e[1B\e[$3G      "
         chars="111100001100001100001100111111"
     ;;                
     2)                
+        full="██████\e[1B\e[$3G    ██\e[1B\e[$3G██████\e[1B\e[$3G██    \e[1B\e[$3G██████"
+        empty="      \e[1B\e[$3G████  \e[1B\e[$3G      \e[1B\e[$3G  ████\e[1B\e[$3G      "
         chars="111111000011111111110000111111"  
     ;;                
     3)                
+        full="██████\e[1B\e[$3G    ██\e[1B\e[$3G██████\e[1B\e[$3G    ██\e[1B\e[$3G██████"
+        empty="      \e[1B\e[$3G████  \e[1B\e[$3G      \e[1B\e[$3G████  \e[1B\e[$3G      "
         chars="111111000011111111000011111111"  
     ;;                
     4)                
+        full="██  ██\e[1B\e[$3G██  ██\e[1B\e[$3G██████\e[1B\e[$3G    ██\e[1B\e[$3G    ██"
+        empty="  ██  \e[1B\e[$3G  ██  \e[1B\e[$3G      \e[1B\e[$3G████  \e[1B\e[$3G████  "
         chars="110011110011111111000011000011"  
     ;;                
     5)                
+        full="██████\e[1B\e[$3G██    \e[1B\e[$3G██████\e[1B\e[$3G    ██\e[1B\e[$3G██████"
+        empty="      \e[1B\e[$3G  ████\e[1B\e[$3G      \e[1B\e[$3G████  \e[1B\e[$3G      "
         chars="111111110000111111000011111111"  
     ;;                
     6)                
+        full="██████\e[1B\e[$3G██    \e[1B\e[$3G██████\e[1B\e[$3G██  ██\e[1B\e[$3G██████"
+        empty="      \e[1B\e[$3G  ████\e[1B\e[$3G      \e[1B\e[$3G  ██  \e[1B\e[$3G      "
         chars="111111110000111111110011111111"  
     ;;                
     7)                
+        full="██████\e[1B\e[$3G    ██\e[1B\e[$3G    ██\e[1B\e[$3G    ██\e[1B\e[$3G    ██"
+        empty="      \e[1B\e[$3G████  \e[1B\e[$3G████  \e[1B\e[$3G████  \e[1B\e[$3G████  "
         chars="111111000011000011000011000011"  
     ;;                
     8)                
+        full="██████\e[1B\e[$3G██  ██\e[1B\e[$3G██████\e[1B\e[$3G██  ██\e[1B\e[$3G██████"
+        empty="      \e[1B\e[$3G  ██  \e[1B\e[$3G      \e[1B\e[$3G  ██  \e[1B\e[$3G      "
         chars="111111110011111111110011111111"  
     ;;                
     9)                
+        full="██████\e[1B\e[$3G██  ██\e[1B\e[$3G██████\e[1B\e[$3G    ██\e[1B\e[$3G██████"
+        empty="      \e[1B\e[$3G  ██  \e[1B\e[$3G      \e[1B\e[$3G████  \e[1B\e[$3G      "
         chars="111111110011111111000011111111"  
     ;;                
     esac
 
     if [[ $digits == false ]]; then
+        full="      \e[1B\e[$3G      \e[1B\e[$3G      \e[1B\e[$3G      \e[1B\e[$3G      "
+        empty="██████\e[1B\e[$3G██████\e[1B\e[$3G██████\e[1B\e[$3G██████\e[1B\e[$3G██████"
         chars="000000000000000000000000000000"
     fi
 
     num="$battery_color\033[$2;$3H"
 
-    for i in $(seq 0 29); do
-        if (( $i % 6 < $4 )); then
-            if [[ "${chars:$i:1}" == "1" ]]; then
-                num+=" "
-            else
-                num+="█"
-            fi
-        else
-            if [[ "${chars:$i:1}" == "1" ]]; then
-                num+="█"
-            else
-                num+=" "
-            fi
-        fi
+    if (( $4 == 0 )); then
+        printf "$num$full"
+    elif (( $4 > 6 )); then
+        printf "$num$empty"
+    else
 
-        if (( $i % 6 == 5 )); then
-            num+="\033[$(($2 + ($i+1) / 6));$3H"
-        fi
-    done
-    printf "$num"
+        for i in {0..29}; do
+            if (( $i % 6 < $4 )); then
+                if [[ "${chars:$i:1}" == "1" ]]; then
+                    num+=" "
+                else
+                    num+="█"
+                fi
+            else
+                if [[ "${chars:$i:1}" == "1" ]]; then
+                    num+="█"
+                else
+                    num+=" "
+                fi
+            fi
+
+            if (( $i % 6 == 5 )); then
+                num+="\033[$(($2 + ($i+1) / 6));$3H"
+            fi
+        done
+        printf "$num"
+    fi
 }
 
 print_number () {
-    case $printable in
+    case $mode in
     'c')
         data=$bat
     ;;
-    'p')
+    'm')
         data=$power
     ;;
     't')
@@ -369,7 +469,7 @@ print_number () {
             if (( $fill_cols > 16 )); then
                 blocks1=$(($fill_cols-17))
             fi
-            print_digit $data $(($newl+2)) $(($indent+16)) $blocks1 &
+            print_digit $data $1 $(($indent+16)) $blocks1 &
         ;;
         2)
             blocks1=0
@@ -381,10 +481,10 @@ print_number () {
                 fi
             fi
 
-            print_digit ${data:0:1} $(($newl+2)) $(($indent+12)) $blocks1 &
-            print_digit ${data:1:1} $(($newl+2)) $(($indent+20)) $blocks2 &
+            print_digit ${data:0:1} $1 $(($indent+12)) $blocks1 &
+            print_digit ${data:1:1} $1 $(($indent+20)) $blocks2 &
         ;;
-        3)
+        3 | *)
             blocks1=0
             blocks2=0
             blocks3=0
@@ -398,13 +498,11 @@ print_number () {
                 fi
             fi
 
-            print_digit ${data:0:1} $(($newl+2)) $(($indent+8))  $blocks1 &
-            print_digit ${data:1:1} $(($newl+2)) $(($indent+16)) $blocks2 &
-            print_digit ${data:2:1} $(($newl+2)) $(($indent+24)) $blocks3 &
+            print_digit ${data:0:1} $1 $(($indent+8))  $blocks1 &
+            print_digit ${data:1:1} $1 $(($indent+16)) $blocks2 &
+            print_digit ${data:2:1} $1 $(($indent+24)) $blocks3 &
         ;;
     esac
-
-    tput cup $(tput lines) 0
 }
 
 print_charge () {
@@ -418,27 +516,27 @@ print_charge () {
             set_id=1
         fi
 
-        charge="\033[$(($newl+3));$(($indent+44))H"
+        charge="\033[$(($newl+3));$(($indent+47))H"
         if [ $charging -eq 1 ]; then
-            charge+="      ${charge_color}${fat_set[$set_id]:1:1}███████${fat_set[$set_id]:0:1}"
-        else
-            charge+="                 "
-        fi
-
-
-        charge+="\033[$(($newl+4));$(($indent+44))H"
-        if [ $charging -eq 1 ]; then	
-            charge+="       ${charge_color}${fat_set[$set_id]:3:1}$extra█${fat_set[$set_id]:2:1}"
+            charge+="   ${charge_color}${fat_set[$set_id]:1:1}███████${fat_set[$set_id]:0:1}  "
         else
             charge+="              "
         fi
+
+
+        charge+="\033[$(($newl+4));$(($indent+47))H"
+        if [ $charging -eq 1 ]; then	
+            charge+="    ${charge_color}${fat_set[$set_id]:3:1}$extra█${fat_set[$set_id]:2:1}  "
+        else
+            charge+="           "
+        fi
         
 
-        charge+="\033[$(($newl+5));$(($indent+44))H"
+        charge+="\033[$(($newl+5));$(($indent+47))H"
         if [ $charging -eq 1 ]; then	
-            charge+="   ${charge_color}${fat_set[$set_id]:5:1}███████${fat_set[$set_id]:4:1}"
+            charge+="${charge_color}${fat_set[$set_id]:5:1}███████${fat_set[$set_id]:4:1}  "
         else
-            charge+="            "
+            charge+="         "
         fi
 
     else
@@ -449,87 +547,67 @@ print_charge () {
             set_id=1
         fi
 
-        charge="\033[$(($newl+3));$(($indent+44))H"
+        charge="\033[$(($newl+3));$(($indent+47))H"
         if [ $charging -eq 1 ]; then	
-            charge+="       ${charge_color}${set[$set_id]:0:1}██████${set[$set_id]:1}"
+            charge+="   ${charge_color}${set[$set_id]:0:1}██████${set[$set_id]:1}"
         else
-            charge+="               "
+            charge+="           "
         fi
 
-        charge+="\033[$(($newl+4));$(($indent+44))H"
+        charge+="\033[$(($newl+4));$(($indent+47))H"
         if [ $charging -eq 1 ]; then	
-            charge+="    ${charge_color}${set[$set_id]:0:1}██████${set[$set_id]:1}"
+            charge+="${charge_color}${set[$set_id]:0:1}██████${set[$set_id]:1}"
         else
-            charge+="            "
+            charge+="       "
         fi
     fi
     printf "$charge"
-    tput cup $(tput cols) 0
-}
-
-print_bat_row () {
-    i=0
-
-    row="${shell_color}██"
-
-    while [ $i -le 33 ]; do
-        if [ $i -le $blocks ]; then
-            row+="${battery_color}█"
-        else
-            row+=" "
-        fi
-
-        ((i+=1))
-    done
-
-    if [ $1 -eq 0 ]; then
-        row+="${shell_color}████"
-    else 
-        row+="${shell_color}████████"
-    fi
-    printf "$row"
 }
 
 print_col () {
-    index=$(($indent+$blocks+2))
-    if [[ $index > $old_index ]]; then
-        old_index=$index
+    diff=$(($blocks - $old_blocks))
+    if (( $diff > 0 )); then
+        idx_set=$(seq 0 $diff)
         new_sym="█"
-    else
-        old_index=$index
-        index=$(($index+1))
+    else 
+        idx_set=$(seq 0 -1 $(($diff+1)))
         new_sym=" "
     fi
 
-    col="$battery_color"
+    for i in $idx_set; do
+        index=$(($indent+$old_blocks+2+$i))
+        col="$battery_color\033[$(($newl+1));$(($index))H"
 
-    for i in $(seq 0 $1); do
-        col+="\033[$(($newl+$i+1));$(($index))H$new_sym"
+        for j in $(seq 1 $1); do
+            col+="$new_sym\e[1B\e[1D"
+        done
+        printf "$col"
     done
-    printf "$col"
 }
 
 print_bat () {
     if [[ $fat == true ]]; then
-        core_rows=6
+        core_rows=7
+        cap_set=(0 4 8 8 8 8 8 4)
     else
-        core_rows=5
+        core_rows=6
+        cap_set=(0 4 8 8 8 8 4)
     fi
 
     if [[ $redraw == 0 ]]; then
+        bstring="█████████████████████████████████████"
+        estring="                                     "
+        cap_indent=$(($indent+36))
+
         printf "\033[$newl;$((indent))H${shell_color}████████████████████████████████████████\n" & 
-        printf "\033[$(($newl+1));$(($indent))H$(print_bat_row 0 &)" &
-
-        for i in $(seq 2 $core_rows); do
-                printf "\033[$(($newl+$i));$(($indent))H$(print_bat_row 1 &)" &
+        for i in $(seq 1 $core_rows); do
+            printf "\033[$(($newl+$i));$(($indent))H${shell_color}██${battery_color}${bstring:0:$(($blocks+1))}${estring:0:$((33-$blocks))}${shell_color}${bstring:0:${cap_set[$i]}}" &
         done
+        printf "\033[$(($newl+$core_rows+1));$(($indent))H${shell_color}████████████████████████████████████████\n" &
 
-        printf "\033[$(($newl+$core_rows+1));$(($indent))H$(print_bat_row 0 &)" &
-        printf "\033[$(($newl+$core_rows+2));$(($indent))H${shell_color}████████████████████████████████████████\n" &
 
+        old_blocks=$blocks
         redraw=1
-        printf "$img"
-
     else
         if [[ $blocks == $old_blocks ]]; then
             return 0
@@ -538,8 +616,6 @@ print_bat () {
         fi
         old_blocks=$blocks
     fi
-
-    tput cup $(tput lines) 0
 }
 
 big_loop () {
@@ -556,7 +632,7 @@ big_loop () {
 
     print_charge &
     print_bat
-    print_number &
+    print_number $(($newl+2)) &
 }
 
 print_small_bat_row () {
@@ -625,7 +701,11 @@ fi
 if [[ $minimal == true ]]; then
     bat_status "full"
     printf "Battery: $bat%%\n"
-    printf "Power Draw: %dW\n" $power
+    if [[ $charging == 1 ]]; then
+        printf "Time to Full: %dh %dm\n" $(($power/60)) $(($power % 60))
+    else
+        printf "Time Left: %dh %dm\n" $(($power/60)) $(($power % 60))
+    fi
     printf "Temperature: $temp°\n"
     if [[ $charging == 1 ]]; then
         printf "Charging: True\n"
@@ -637,7 +717,10 @@ fi
 
 tput civis
 stty -echo
+
+if [[ $small == false ]] && [[ $live == true ]]; then
 tput smcup
+fi
 
 bat_status
 main_loop "resize"
@@ -648,15 +731,16 @@ fi
 
 if [[ $live == true ]]; then
     while [ 0 ]; do
+        bat_status
 
         if [[ $small == false ]]; then
-            case $printable in
+            case $mode in
             't')
                 if [[ $previous_temp != $temp ]]; then
                     main_loop
                 fi
             ;;
-            'p')
+            'm')
                 if [[ $previous_power != $power ]]; then
                     main_loop
                 fi
@@ -674,6 +758,5 @@ if [[ $live == true ]]; then
         fi
 
         handle_event || break
-        bat_status
     done
 fi
