@@ -77,9 +77,11 @@ while getopts ":hnlmtp:csdfb:" option; do
         fi
     ;;
     p)
-        if [[ $(echo 'ctm' | grep $OPTARG) ]]; then
+        case $OPTARG in
+        "c" | "t" | "m")
             mode=$OPTARG
-        fi
+            ;;
+        esac
     ;;
     f)
         if [[ $fat == true ]]; then

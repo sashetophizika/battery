@@ -11,6 +11,7 @@
 ![image](screenshot_full.png "screenshot_full")
 
 ## Installation
+By the way, I got annoyed at the slowness of bash, so i rewrote [this](https://github.com/sashetophizika/batc.git) in C.
 
 ```bash
 git clone https://github.com/sasheto-phizika/battery.git
@@ -45,7 +46,9 @@ You can create `~/.config/battery/battery.conf` in order to change the colors an
 ### Default configuration:
 
 ```bash
-#colors can be [red | green | yellow | blue | magenta | cyan | white | black | none] or a hex code with capital letters "#0000FF" 
+# colors can be [red | green | yellow | blue | magenta | cyan | white | black | none] 
+# or a hex code with capital letters "#0000FF" 
+
 color_100p="green" #core color between 60-100%
 color_60p="yellow" #core color between 20-60%
 color_20p="red" #core color between 0-20%
@@ -67,3 +70,4 @@ fat=false
 alt_charge=false
 ```
 The config file is just sourced as a bash script, so technically it can be used to run any code at the start and there has to be no whitespace between the equals signs. Be careful not to run random commands.
+
