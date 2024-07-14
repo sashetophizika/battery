@@ -197,7 +197,7 @@ handle_event () {
             fi
 
             bat_status
-            big_loop
+            main_loop
         ;;
         "r")
             redraw=0
