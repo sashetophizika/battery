@@ -11,7 +11,7 @@
 ![image](screenshot_full.png "screenshot_full")
 
 ## Installation
-By the way, I got annoyed at the slowness of bash, so i rewrote [this](https://github.com/sashetophizika/batc.git) in C.
+By the way, I got annoyed at the slowness of bash, so i rewrote [this project](https://github.com/sashetophizika/batc.git) in C with many improvements.
 
 ```bash
 git clone https://github.com/sasheto-phizika/battery.git
