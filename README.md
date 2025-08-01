@@ -1,5 +1,7 @@
 # Battery
 
+#### The bash version of this project is abandoned in favour of [the C version](https://github.com/sashetophizika/batc.git) which is faster and much nicer.
+
 ### Simple utility to monitor the battery in a stylish manner.
 
 ![image](screenshot.png "screenshot")
@@ -11,8 +13,6 @@
 ![image](screenshot_full.png "screenshot_full")
 
 ## Installation
-By the way, I got annoyed at the slowness of bash, so i rewrote [this project](https://github.com/sashetophizika/batc.git) in C with many improvements.
-
 ```bash
 git clone https://github.com/sasheto-phizika/battery.git
 cp battery/battery ~/.local/bin # user installation
